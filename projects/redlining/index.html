@@ -49,11 +49,14 @@
     .dagcol{flex:1}
     .dagcollbl{font-family:var(--mono);font-size:0.56rem;letter-spacing:0.12em;text-transform:uppercase;margin-bottom:0.6rem;padding-bottom:0.3rem;border-bottom:1px solid var(--border)}
     .c1lbl{color:#6B9E78} .c2lbl{color:#5B8DB8} .c3lbl{color:#B8955B} .c4lbl{color:var(--a)}
-    .dn{background:var(--bg);border:1px solid var(--border);padding:0.4rem 0.65rem;margin-bottom:0.35rem;font-family:var(--mono);font-size:0.6rem;color:var(--mid);cursor:default;transition:all 0.2s}
+    .dn{background:var(--bg);border:1px solid var(--border);padding:0.4rem 0.65rem;margin-bottom:0.35rem;font-family:var(--mono);font-size:0.6rem;color:var(--mid);cursor:pointer;transition:all 0.2s;user-select:none}
     .dn:hover{border-color:var(--mid);color:var(--text)}
     .dn.s{border-left:2px solid #6B9E78} .dn.st{border-left:2px solid #5B8DB8} .dn.i{border-left:2px solid #B8955B} .dn.m{border-left:2px solid var(--a)}
+    .dn.active{border-color:var(--text);color:var(--text);background:#1c1c1c}
+    .dn.s.active{border-left-color:#6B9E78} .dn.st.active{border-left-color:#5B8DB8} .dn.i.active{border-left-color:#B8955B} .dn.m.active{border-left-color:var(--a)}
     .dnsub{font-size:0.52rem;color:var(--muted);margin-top:0.12rem}
     .dagarr{display:flex;align-items:center;padding-top:1.2rem;color:var(--border);font-size:0.9rem}
+    .sql-fname{font-family:var(--mono);font-size:0.56rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);padding:0.45rem 1.4rem;background:#0A0A0A;border:1px solid var(--border);border-bottom:none}
     .code{background:#111;border:1px solid var(--border);overflow-x:auto;margin-bottom:1rem}
     .code pre{font-family:var(--mono);font-size:0.7rem;line-height:1.75;color:#888;padding:1.1rem 1.4rem;white-space:pre}
     .kw{color:#E85D26} .fn{color:#7BB8D4} .str{color:#7DAD6F} .cm{color:#444} .vr{color:#C4A96A} .nm{color:#B07FD4}
@@ -128,32 +131,32 @@
         </div>
 
         <div class="dagwrap">
-          <div class="daglbl">// dbt model lineage</div>
+          <div class="daglbl">// dbt model lineage — click any node to view SQL</div>
           <div class="dagflow">
             <div class="dagcol">
               <div class="dagcollbl c1lbl">Sources</div>
-              <div class="dn s">holc_polygons<div class="dnsub">GeoJSON</div></div>
-              <div class="dn s">acs_rent_burden<div class="dnsub">Census API</div></div>
-              <div class="dn s">hud_homeownership<div class="dnsub">HUD flat files</div></div>
+              <div class="dn s" data-model="holc_polygons">holc_polygons<div class="dnsub">GeoJSON</div></div>
+              <div class="dn s" data-model="acs_rent_burden">acs_rent_burden<div class="dnsub">Census API</div></div>
+              <div class="dn s" data-model="hud_homeownership">hud_homeownership<div class="dnsub">HUD flat files</div></div>
             </div>
             <div class="dagarr">→</div>
             <div class="dagcol">
               <div class="dagcollbl c2lbl">Staging</div>
-              <div class="dn st">stg_holc</div>
-              <div class="dn st">stg_acs</div>
-              <div class="dn st">stg_hud</div>
+              <div class="dn st" data-model="stg_holc">stg_holc</div>
+              <div class="dn st" data-model="stg_acs">stg_acs</div>
+              <div class="dn st" data-model="stg_hud">stg_hud</div>
             </div>
             <div class="dagarr">→</div>
             <div class="dagcol">
               <div class="dagcollbl c3lbl">Int</div>
-              <div class="dn i">int_tract_holc_join<div class="dnsub">spatial crosswalk</div></div>
-              <div class="dn i">int_rent_metrics</div>
+              <div class="dn i" data-model="int_tract_holc_join">int_tract_holc_join<div class="dnsub">spatial crosswalk</div></div>
+              <div class="dn i" data-model="int_rent_metrics">int_rent_metrics</div>
             </div>
             <div class="dagarr">→</div>
             <div class="dagcol">
               <div class="dagcollbl c4lbl">Marts</div>
-              <div class="dn m">fct_tract_equity</div>
-              <div class="dn m">rpt_holc_outcomes</div>
+              <div class="dn m" data-model="fct_tract_equity">fct_tract_equity</div>
+              <div class="dn m" data-model="rpt_holc_outcomes">rpt_holc_outcomes</div>
             </div>
           </div>
         </div>
@@ -177,23 +180,11 @@
           <canvas id="homeChart"></canvas>
         </div>
 
-        <div class="code">
-          <pre><span class="cm">-- int_tract_holc_join.sql</span>
-<span class="kw">with</span> crosswalk <span class="kw">as</span> (
-    <span class="kw">select</span> * <span class="kw">from</span> {{ <span class="fn">ref</span>(<span class="str">'stg_holc_tract_crosswalk'</span>) }}
-),
-acs <span class="kw">as</span> (
-    <span class="kw">select</span> * <span class="kw">from</span> {{ <span class="fn">ref</span>(<span class="str">'stg_acs'</span>) }}
-)
-<span class="kw">select</span>
-    a.<span class="vr">tract_geoid</span>, a.<span class="vr">city</span>, a.<span class="vr">state</span>,
-    c.<span class="vr">holc_grade</span>,
-    c.<span class="vr">overlap_pct</span>,
-    a.<span class="vr">rent_burden_pct</span>,
-    a.<span class="vr">median_hh_income</span>
-<span class="kw">from</span> acs a
-<span class="kw">left join</span> crosswalk c <span class="kw">using</span> (tract_geoid)
-<span class="kw">where</span> c.<span class="vr">overlap_pct</span> >= <span class="nm">0.5</span></pre>
+        <div class="sql-fname" id="sql-fname">// select a model from the lineage to view its SQL</div>
+        <div class="code" id="sql-panel">
+          <pre id="sql-pre"><span class="cm">-- Click any node in the dbt lineage diagram to view its SQL.
+-- Sources show schema definitions; staging, intermediate,
+-- and mart models show the full dbt SQL file.</span></pre>
         </div>
       </div>
 
@@ -234,6 +225,303 @@ acs <span class="kw">as</span> (
       datasets: [{ data: [62.1, 54.8, 41.3, 28.7], backgroundColor: ['#4A9E8E','#4A9E8E77','#E85D2633','#E85D2611'], borderColor: ['#4A9E8E','#4A9E8E','#E85D26','#E85D26'], borderWidth: 1.5 }]
     },
     options: { responsive: true, plugins: { legend: { display: false }, tooltip: { ...T, callbacks: { label: c => ' ' + c.raw + '% own their home' } } }, scales: { x: { grid: { display: false }, border: { display: false } }, y: { grid: G, border: { display: false }, min: 0, max: 75, ticks: { callback: v => v + '%' } } } }
+  });
+
+  // ── SQL model content ──────────────────────────────────────────────────────
+  const SQL_MODELS = {
+    holc_polygons: {
+      fname: 'sources.yml',
+      sql: `-- source: mapping_inequality.holc_polygons
+-- Raw HOLC boundary polygons from the Mapping Inequality project.
+-- Freshness: historical (1930s surveys; no refresh needed)
+--
+-- Key fields:
+--   holc_id      -- unique polygon identifier
+--   city_name    -- city as recorded in original survey
+--   state_code   -- two-letter state abbreviation
+--   holc_grade   -- A (Best), B (Desirable), C (Declining), D (Hazardous)
+--   geometry_wkt -- polygon boundary as WKT string
+--   survey_year  -- year of original HOLC field survey`
+    },
+    acs_rent_burden: {
+      fname: 'sources.yml',
+      sql: `-- source: census_api.acs_rent_burden
+-- ACS 5-year estimates pulled via Census Bureau API.
+-- Table B25070: Gross Rent as Percentage of Household Income
+-- Table B19013: Median Household Income in the Past 12 Months
+--
+-- Key fields:
+--   geoid       -- 11-digit census tract FIPS code
+--   b25070_001e -- total renter-occupied units
+--   b25070_010e -- units spending 30 percent or more on rent
+--   b19013_001e -- median household income (dollars)
+--   acs_year    -- 5-year survey ending year`
+    },
+    hud_homeownership: {
+      fname: 'sources.yml',
+      sql: `-- source: hud_affh.hud_homeownership
+-- HUD Affirmatively Furthering Fair Housing flat files.
+-- Tract-level homeownership rates from administrative data.
+--
+-- Key fields:
+--   tract_geoid          -- 11-digit census tract FIPS code
+--   total_households     -- total occupied housing units
+--   owner_occupied_units -- count of owner-occupied units
+--   data_year            -- reference year`
+    },
+    stg_holc: {
+      fname: 'stg_holc.sql',
+      sql: `{{ config(materialized='view', tags=['housing', 'staging']) }}
+
+WITH raw_polygons AS (
+    SELECT
+        holc_id,
+        city_name,
+        state_code,
+        holc_grade,
+        geometry_wkt,
+        survey_year,
+    FROM {{ source('mapping_inequality', 'holc_polygons') }}
+)
+
+SELECT
+    holc_id,
+    city_name,
+    state_code,
+    holc_grade,
+    ST_GEOMFROMWKT(geometry_wkt) AS tract_geometry,
+    survey_year,
+FROM raw_polygons
+WHERE holc_grade IS NOT NULL`
+    },
+    stg_acs: {
+      fname: 'stg_acs.sql',
+      sql: `{{ config(materialized='view', tags=['housing', 'staging']) }}
+
+WITH raw_estimates AS (
+    SELECT
+        geoid           AS tract_geoid,
+        b25070_001e     AS total_renter_households,
+        b25070_010e     AS cost_burdened_households,
+        b19013_001e     AS median_hh_income,
+        acs_year        AS year,
+    FROM {{ source('census_api', 'acs_rent_burden') }}
+)
+
+SELECT
+    tract_geoid,
+    total_renter_households,
+    cost_burdened_households,
+    ROUND(
+        cost_burdened_households * 100.0
+            / NULLIF(total_renter_households, 0),
+        2
+    )                   AS rent_burden_pct,
+    median_hh_income,
+    year,
+FROM raw_estimates
+WHERE total_renter_households > 0`
+    },
+    stg_hud: {
+      fname: 'stg_hud.sql',
+      sql: `{{ config(materialized='view', tags=['housing', 'staging']) }}
+
+WITH raw_hud AS (
+    SELECT
+        tract_geoid,
+        total_households,
+        owner_occupied_units,
+        data_year       AS year,
+    FROM {{ source('hud_affh', 'hud_homeownership') }}
+)
+
+SELECT
+    tract_geoid,
+    total_households,
+    owner_occupied_units,
+    ROUND(
+        owner_occupied_units * 100.0
+            / NULLIF(total_households, 0),
+        2
+    )                   AS homeownership_rate,
+    year,
+FROM raw_hud
+WHERE total_households > 0`
+    },
+    int_tract_holc_join: {
+      fname: 'int_tract_holc_join.sql',
+      sql: `{{ config(materialized='table', tags=['housing', 'intermediate']) }}
+
+WITH holc_crosswalk AS (
+    SELECT
+        tract_geoid,
+        holc_grade,
+        city_name,
+        state_code,
+        overlap_pct,
+    FROM {{ ref('stg_holc_tract_crosswalk') }}
+),
+
+acs_tracts AS (
+    SELECT
+        tract_geoid,
+        rent_burden_pct,
+        median_hh_income,
+        year,
+    FROM {{ ref('stg_acs') }}
+)
+
+SELECT
+    acs_tracts.tract_geoid,
+    holc_crosswalk.city_name,
+    holc_crosswalk.state_code,
+    holc_crosswalk.holc_grade,
+    holc_crosswalk.overlap_pct,
+    acs_tracts.rent_burden_pct,
+    acs_tracts.median_hh_income,
+FROM acs_tracts
+LEFT JOIN holc_crosswalk
+    USING (tract_geoid)
+WHERE holc_crosswalk.overlap_pct >= 0.5`
+    },
+    int_rent_metrics: {
+      fname: 'int_rent_metrics.sql',
+      sql: `{{ config(materialized='table', tags=['housing', 'intermediate']) }}
+
+WITH tract_holc AS (
+    SELECT
+        tract_geoid,
+        holc_grade,
+        rent_burden_pct,
+        median_hh_income,
+    FROM {{ ref('int_tract_holc_join') }}
+),
+
+grade_averages AS (
+    SELECT
+        holc_grade,
+        ROUND(AVG(rent_burden_pct), 2)     AS avg_rent_burden,
+        ROUND(MEDIAN(median_hh_income), 0) AS median_income,
+        COUNT(tract_geoid)                 AS tract_count,
+    FROM tract_holc
+    GROUP BY holc_grade
+)
+
+SELECT
+    tract_holc.tract_geoid,
+    tract_holc.holc_grade,
+    tract_holc.rent_burden_pct,
+    grade_averages.avg_rent_burden        AS grade_avg_burden,
+    ROUND(
+        tract_holc.rent_burden_pct
+            - grade_averages.avg_rent_burden,
+        2
+    )                                     AS burden_vs_grade_avg,
+FROM tract_holc
+LEFT JOIN grade_averages
+    USING (holc_grade)`
+    },
+    fct_tract_equity: {
+      fname: 'fct_tract_equity.sql',
+      sql: `{{ config(materialized='table', tags=['housing', 'mart']) }}
+
+WITH tract_metrics AS (
+    SELECT
+        tract_geoid,
+        holc_grade,
+        rent_burden_pct,
+        burden_vs_grade_avg,
+    FROM {{ ref('int_rent_metrics') }}
+),
+
+hud_ownership AS (
+    SELECT
+        tract_geoid,
+        homeownership_rate,
+    FROM {{ ref('stg_hud') }}
+)
+
+SELECT
+    tract_metrics.tract_geoid,
+    tract_metrics.holc_grade,
+    tract_metrics.rent_burden_pct,
+    tract_metrics.burden_vs_grade_avg,
+    hud_ownership.homeownership_rate,
+    CASE
+        WHEN tract_metrics.holc_grade IN ('C', 'D')
+            AND tract_metrics.rent_burden_pct > 40
+            THEN TRUE
+        ELSE FALSE
+    END                                AS high_burden_redlined_flag,
+FROM tract_metrics
+LEFT JOIN hud_ownership
+    USING (tract_geoid)`
+    },
+    rpt_holc_outcomes: {
+      fname: 'rpt_holc_outcomes.sql',
+      sql: `{{ config(materialized='table', tags=['housing', 'mart']) }}
+
+WITH tract_equity AS (
+    SELECT
+        holc_grade,
+        rent_burden_pct,
+        homeownership_rate,
+        high_burden_redlined_flag,
+    FROM {{ ref('fct_tract_equity') }}
+)
+
+SELECT
+    holc_grade,
+    COUNT(*)                              AS tract_count,
+    ROUND(AVG(rent_burden_pct), 1)        AS avg_rent_burden_pct,
+    ROUND(AVG(homeownership_rate), 1)     AS avg_homeownership_rate,
+    SUM(
+        CASE WHEN high_burden_redlined_flag
+            THEN 1 ELSE 0
+        END
+    )                                     AS high_burden_tract_count,
+FROM tract_equity
+GROUP BY holc_grade
+ORDER BY holc_grade`
+    }
+  };
+
+  // ── Syntax highlighter ─────────────────────────────────────────────────────
+  const KW = /\b(SELECT|FROM|WHERE|WITH|AS|AND|OR|NOT|IN|IS|NULL|TRUE|FALSE|LEFT|RIGHT|INNER|OUTER|JOIN|ON|USING|GROUP|ORDER|HAVING|CASE|WHEN|THEN|ELSE|END|DISTINCT|LIMIT|ROUND|COUNT|SUM|AVG|MAX|MIN|NULLIF|COALESCE|MEDIAN|BY|ALL|UNION|OVER|PARTITION|FIRST_VALUE|EXTRACT|TRUNC|ST_GEOMFROMWKT|ST_AREA|ST_INTERSECTION)\b/g;
+
+  function hl(raw) {
+    return raw
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .split('\n')
+      .map(line => {
+        if (/^\s*--/.test(line)) return '<span class="cm">' + line + '</span>';
+        const ci = line.indexOf('--');
+        const body = ci >= 0 ? line.slice(0, ci) : line;
+        const tail = ci >= 0 ? '<span class="cm">' + line.slice(ci) + '</span>' : '';
+        const out = body
+          .replace(/(\{\{[^}]+\}\})/g, '<span class="fn">$1</span>')
+          .replace(/'([^']*)'/g, "<span class=\"str\">'$1'</span>")
+          .replace(KW, '<span class="kw">$1</span>')
+          .replace(/\b(\d+(?:\.\d+)?)\b/g, '<span class="nm">$1</span>');
+        return out + tail;
+      })
+      .join('\n');
+  }
+
+  // ── Lineage click handler ──────────────────────────────────────────────────
+  const nodes   = document.querySelectorAll('.dn[data-model]');
+  const sqlFname = document.getElementById('sql-fname');
+  const sqlPre   = document.getElementById('sql-pre');
+
+  nodes.forEach(node => {
+    node.addEventListener('click', () => {
+      nodes.forEach(n => n.classList.remove('active'));
+      node.classList.add('active');
+      const entry = SQL_MODELS[node.dataset.model];
+      if (!entry) return;
+      sqlFname.textContent = '// ' + entry.fname;
+      sqlPre.innerHTML = hl(entry.sql);
+    });
   });
 </script>
 </body>

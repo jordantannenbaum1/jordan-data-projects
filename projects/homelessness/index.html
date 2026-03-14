@@ -49,11 +49,14 @@
     .dagcol{flex:1}
     .dagcollbl{font-family:var(--mono);font-size:0.56rem;letter-spacing:0.12em;text-transform:uppercase;margin-bottom:0.6rem;padding-bottom:0.3rem;border-bottom:1px solid var(--border)}
     .c1lbl{color:#6B9E78} .c2lbl{color:#5B8DB8} .c3lbl{color:#B8955B} .c4lbl{color:var(--a)}
-    .dn{background:var(--bg);border:1px solid var(--border);padding:0.4rem 0.65rem;margin-bottom:0.35rem;font-family:var(--mono);font-size:0.6rem;color:var(--mid);cursor:default;transition:all 0.2s}
+    .dn{background:var(--bg);border:1px solid var(--border);padding:0.4rem 0.65rem;margin-bottom:0.35rem;font-family:var(--mono);font-size:0.6rem;color:var(--mid);cursor:pointer;transition:all 0.2s;user-select:none}
     .dn:hover{border-color:var(--mid);color:var(--text)}
     .dn.s{border-left:2px solid #6B9E78} .dn.st{border-left:2px solid #5B8DB8} .dn.i{border-left:2px solid #B8955B} .dn.m{border-left:2px solid var(--a)}
+    .dn.active{border-color:var(--text);color:var(--text);background:#1c1c1c}
+    .dn.s.active{border-left-color:#6B9E78} .dn.st.active{border-left-color:#5B8DB8} .dn.i.active{border-left-color:#B8955B} .dn.m.active{border-left-color:var(--a)}
     .dnsub{font-size:0.52rem;color:var(--muted);margin-top:0.12rem}
     .dagarr{display:flex;align-items:center;padding-top:1.2rem;color:var(--border);font-size:0.9rem}
+    .sql-fname{font-family:var(--mono);font-size:0.56rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);padding:0.45rem 1.4rem;background:#0A0A0A;border:1px solid var(--border);border-bottom:none}
     .code{background:#111;border:1px solid var(--border);overflow-x:auto;margin-bottom:1rem}
     .code pre{font-family:var(--mono);font-size:0.7rem;line-height:1.75;color:#888;padding:1.1rem 1.4rem;white-space:pre}
     .kw{color:#E85D26} .fn{color:#7BB8D4} .str{color:#7DAD6F} .cm{color:#444} .vr{color:#C4A96A} .nm{color:#B07FD4}
@@ -128,33 +131,33 @@
         </div>
 
         <div class="dagwrap">
-          <div class="daglbl">// dbt model lineage</div>
+          <div class="daglbl">// dbt model lineage — click any node to view SQL</div>
           <div class="dagflow">
             <div class="dagcol">
               <div class="dagcollbl c1lbl">Sources</div>
-              <div class="dn s">hud_pit</div>
-              <div class="dn s">zillow_rent</div>
-              <div class="dn s">acs_income</div>
-              <div class="dn s">hud_fmr</div>
+              <div class="dn s" data-model="hud_pit">hud_pit</div>
+              <div class="dn s" data-model="zillow_rent">zillow_rent</div>
+              <div class="dn s" data-model="acs_income">acs_income</div>
+              <div class="dn s" data-model="hud_fmr">hud_fmr</div>
             </div>
             <div class="dagarr">→</div>
             <div class="dagcol">
               <div class="dagcollbl c2lbl">Staging</div>
-              <div class="dn st">stg_pit_counts</div>
-              <div class="dn st">stg_zillow_rent</div>
-              <div class="dn st">stg_acs_income</div>
+              <div class="dn st" data-model="stg_pit_counts">stg_pit_counts</div>
+              <div class="dn st" data-model="stg_zillow_rent">stg_zillow_rent</div>
+              <div class="dn st" data-model="stg_acs_income">stg_acs_income</div>
             </div>
             <div class="dagarr">→</div>
             <div class="dagcol">
               <div class="dagcollbl c3lbl">Int</div>
-              <div class="dn i">int_coc_metro_xwalk</div>
-              <div class="dn i">int_rent_burden_coc</div>
+              <div class="dn i" data-model="int_coc_metro_xwalk">int_coc_metro_xwalk</div>
+              <div class="dn i" data-model="int_rent_burden_coc">int_rent_burden_coc</div>
             </div>
             <div class="dagarr">→</div>
             <div class="dagcol">
               <div class="dagcollbl c4lbl">Marts</div>
-              <div class="dn m">fct_homelessness</div>
-              <div class="dn m">rpt_rent_elasticity</div>
+              <div class="dn m" data-model="fct_homelessness">fct_homelessness</div>
+              <div class="dn m" data-model="rpt_rent_elasticity">rpt_rent_elasticity</div>
             </div>
           </div>
         </div>
@@ -178,22 +181,11 @@
           <canvas id="raceChart"></canvas>
         </div>
 
-        <div class="code">
-          <pre><span class="cm">-- int_rent_burden_coc.sql</span>
-<span class="kw">select</span>
-    p.<span class="vr">coc_number</span>, p.<span class="vr">coc_name</span>, p.<span class="vr">year</span>,
-    p.<span class="vr">total_homeless</span>, p.<span class="vr">unsheltered_homeless</span>,
-    p.<span class="vr">homeless_black_pct</span>, p.<span class="vr">total_population</span>,
-    <span class="fn">round</span>(p.<span class="vr">total_homeless</span> * <span class="nm">10000.0</span>
-        / <span class="fn">nullif</span>(p.<span class="vr">total_population</span>, <span class="nm">0</span>), 2) <span class="kw">as</span> homeless_rate_per_10k,
-    r.<span class="vr">median_rent_monthly</span>,
-    i.<span class="vr">median_hh_income</span>,
-    <span class="fn">round</span>((r.<span class="vr">median_rent_monthly</span> * <span class="nm">12</span>)
-        / <span class="fn">nullif</span>(i.<span class="vr">median_hh_income</span>, <span class="nm">0</span>) * <span class="nm">12</span>, 2) <span class="kw">as</span> rent_burden_months
-<span class="kw">from</span> {{ <span class="fn">ref</span>(<span class="str">'stg_pit_counts'</span>) }} p
-<span class="kw">left join</span> {{ <span class="fn">ref</span>(<span class="str">'int_coc_metro_xwalk'</span>) }} x <span class="kw">using</span> (coc_number)
-<span class="kw">left join</span> {{ <span class="fn">ref</span>(<span class="str">'stg_zillow_rent'</span>) }}  r <span class="kw">on</span> x.<span class="vr">metro_cbsa</span> = r.<span class="vr">cbsa_code</span> <span class="kw">and</span> p.<span class="vr">year</span> = r.<span class="vr">year</span>
-<span class="kw">left join</span> {{ <span class="fn">ref</span>(<span class="str">'stg_acs_income'</span>) }}  i <span class="kw">on</span> x.<span class="vr">metro_cbsa</span> = i.<span class="vr">cbsa_code</span> <span class="kw">and</span> p.<span class="vr">year</span> = i.<span class="vr">year</span></pre>
+        <div class="sql-fname" id="sql-fname">// select a model from the lineage to view its SQL</div>
+        <div class="code" id="sql-panel">
+          <pre id="sql-pre"><span class="cm">-- Click any node in the dbt lineage diagram to view its SQL.
+-- Sources show schema definitions; staging, intermediate,
+-- and mart models show the full dbt SQL file.</span></pre>
         </div>
       </div>
 
@@ -246,6 +238,400 @@
       ]
     },
     options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, padding: 14, color: '#888' } }, tooltip: { ...T, callbacks: { label: c => ' ' + c.raw + '%' } } }, scales: { x: { grid: { display: false }, border: { display: false } }, y: { grid: G, border: { display: false }, ticks: { callback: v => v + '%' } } } }
+  });
+
+  // ── SQL model content ──────────────────────────────────────────────────────
+  const SQL_MODELS = {
+    hud_pit: {
+      fname: 'sources.yml',
+      sql: `-- source: hud.pit_count_annual
+-- HUD Point-in-Time Count: annual snapshot of homelessness.
+-- Collected on a single night in late January across 400+ CoCs.
+-- Includes sheltered and unsheltered counts by demographic.
+--
+-- Key fields:
+--   coc_number          -- Continuum of Care identifier (e.g. CA-600)
+--   coc_name            -- CoC geographic name
+--   year                -- PIT count year
+--   total_homeless      -- total homeless individuals
+--   unsheltered_homeless -- unsheltered count only
+--   homeless_black_pct  -- percent identifying as Black
+--   total_population    -- CoC catchment area population`
+    },
+    zillow_rent: {
+      fname: 'sources.yml',
+      sql: `-- source: zillow.zori_metro
+-- Zillow Observed Rent Index (ZORI) by metro area.
+-- Monthly smoothed measure of market-rate asking rents.
+-- Coverage: 2015-present for ~100 metros.
+--
+-- Key fields:
+--   cbsa_code          -- Core Based Statistical Area code
+--   metro_name         -- metro area name
+--   year               -- year
+--   month              -- month (1-12)
+--   median_rent_monthly -- ZORI median asking rent (dollars)`
+    },
+    acs_income: {
+      fname: 'sources.yml',
+      sql: `-- source: census_api.acs_metro_income
+-- ACS 5-year estimates at the CBSA (metro) level.
+-- Table B19013: Median Household Income
+-- Table B17001: Poverty Status by Sex by Age
+--
+-- Key fields:
+--   cbsa_code         -- Core Based Statistical Area code
+--   year              -- ACS 5-year ending year
+--   median_hh_income  -- median household income (dollars)
+--   poverty_rate_pct  -- percent below poverty line`
+    },
+    hud_fmr: {
+      fname: 'sources.yml',
+      sql: `-- source: hud.fair_market_rents
+-- HUD Fair Market Rents (FMR): 40th percentile gross rent.
+-- Used for Section 8 voucher payment standards.
+-- Annual publication; CoC and county level.
+--
+-- Key fields:
+--   fmr_area_code  -- HUD FMR area identifier
+--   coc_number     -- mapped Continuum of Care
+--   year           -- FMR publication year
+--   fmr_0br        -- 0-bedroom FMR (dollars/month)
+--   fmr_1br        -- 1-bedroom FMR (dollars/month)
+--   fmr_2br        -- 2-bedroom FMR (dollars/month)`
+    },
+    stg_pit_counts: {
+      fname: 'stg_pit_counts.sql',
+      sql: `{{ config(materialized='view', tags=['homelessness', 'staging']) }}
+
+WITH raw_pit AS (
+    SELECT
+        coc_number,
+        coc_name,
+        year,
+        total_homeless,
+        unsheltered_homeless,
+        homeless_black_pct,
+        total_population,
+    FROM {{ source('hud', 'pit_count_annual') }}
+    WHERE year >= 2015
+)
+
+SELECT
+    coc_number,
+    coc_name,
+    year,
+    total_homeless,
+    unsheltered_homeless,
+    ROUND(homeless_black_pct, 2)      AS homeless_black_pct,
+    total_population,
+    ROUND(
+        unsheltered_homeless * 100.0
+            / NULLIF(total_homeless, 0),
+        1
+    )                                 AS unsheltered_share_pct,
+FROM raw_pit
+WHERE total_homeless > 0`
+    },
+    stg_zillow_rent: {
+      fname: 'stg_zillow_rent.sql',
+      sql: `{{ config(materialized='view', tags=['homelessness', 'staging']) }}
+
+WITH raw_zori AS (
+    SELECT
+        cbsa_code,
+        metro_name,
+        year,
+        month,
+        median_rent_monthly,
+    FROM {{ source('zillow', 'zori_metro') }}
+    WHERE year >= 2015
+),
+
+annual_avg AS (
+    SELECT
+        cbsa_code,
+        metro_name,
+        year,
+        ROUND(AVG(median_rent_monthly), 0) AS median_rent_monthly,
+    FROM raw_zori
+    GROUP BY cbsa_code, metro_name, year
+)
+
+SELECT
+    cbsa_code,
+    metro_name,
+    year,
+    median_rent_monthly,
+FROM annual_avg`
+    },
+    stg_acs_income: {
+      fname: 'stg_acs_income.sql',
+      sql: `{{ config(materialized='view', tags=['homelessness', 'staging']) }}
+
+WITH raw_acs AS (
+    SELECT
+        cbsa_code,
+        year,
+        median_hh_income,
+        poverty_rate_pct,
+    FROM {{ source('census_api', 'acs_metro_income') }}
+    WHERE year >= 2015
+)
+
+SELECT
+    cbsa_code,
+    year,
+    median_hh_income,
+    ROUND(poverty_rate_pct, 1)   AS poverty_rate_pct,
+    ROUND(
+        median_hh_income / 12.0,
+        0
+    )                            AS median_monthly_income,
+FROM raw_acs
+WHERE median_hh_income > 0`
+    },
+    int_coc_metro_xwalk: {
+      fname: 'int_coc_metro_xwalk.sql',
+      sql: `{{ config(materialized='table', tags=['homelessness', 'intermediate']) }}
+
+-- Crosswalk between HUD CoC boundaries and Census CBSAs.
+-- CoC areas don't map 1:1 to CBSAs; uses largest overlap.
+
+WITH coc_boundaries AS (
+    SELECT
+        coc_number,
+        coc_name,
+        state_code,
+        county_fips_list,
+    FROM {{ ref('stg_coc_geo') }}
+),
+
+cbsa_counties AS (
+    SELECT
+        cbsa_code,
+        metro_name,
+        county_fips,
+    FROM {{ ref('stg_cbsa_county_map') }}
+),
+
+coc_cbsa_overlap AS (
+    SELECT
+        coc_boundaries.coc_number,
+        coc_boundaries.state_code,
+        cbsa_counties.cbsa_code,
+        cbsa_counties.metro_name,
+        COUNT(cbsa_counties.county_fips) AS county_overlap_count,
+    FROM coc_boundaries
+    LEFT JOIN cbsa_counties
+        ON cbsa_counties.county_fips = ANY(coc_boundaries.county_fips_list)
+    GROUP BY
+        coc_boundaries.coc_number,
+        coc_boundaries.state_code,
+        cbsa_counties.cbsa_code,
+        cbsa_counties.metro_name
+)
+
+SELECT DISTINCT
+    coc_number,
+    state_code,
+    FIRST_VALUE(cbsa_code)   OVER (
+        PARTITION BY coc_number
+        ORDER BY county_overlap_count DESC
+    )                        AS metro_cbsa,
+    FIRST_VALUE(metro_name)  OVER (
+        PARTITION BY coc_number
+        ORDER BY county_overlap_count DESC
+    )                        AS metro_name,
+FROM coc_cbsa_overlap`
+    },
+    int_rent_burden_coc: {
+      fname: 'int_rent_burden_coc.sql',
+      sql: `{{ config(materialized='table', tags=['homelessness', 'intermediate']) }}
+
+WITH pit_counts AS (
+    SELECT
+        coc_number,
+        coc_name,
+        year,
+        total_homeless,
+        unsheltered_homeless,
+        homeless_black_pct,
+        total_population,
+    FROM {{ ref('stg_pit_counts') }}
+),
+
+coc_metro_map AS (
+    SELECT
+        coc_number,
+        metro_cbsa,
+    FROM {{ ref('int_coc_metro_xwalk') }}
+),
+
+zillow_rents AS (
+    SELECT
+        cbsa_code,
+        year,
+        median_rent_monthly,
+    FROM {{ ref('stg_zillow_rent') }}
+),
+
+acs_incomes AS (
+    SELECT
+        cbsa_code,
+        year,
+        median_hh_income,
+        median_monthly_income,
+    FROM {{ ref('stg_acs_income') }}
+)
+
+SELECT
+    pit_counts.coc_number,
+    pit_counts.coc_name,
+    pit_counts.year,
+    pit_counts.total_homeless,
+    pit_counts.unsheltered_homeless,
+    pit_counts.homeless_black_pct,
+    pit_counts.total_population,
+    ROUND(
+        pit_counts.total_homeless * 10000.0
+            / NULLIF(pit_counts.total_population, 0),
+        2
+    )                                    AS homeless_rate_per_10k,
+    zillow_rents.median_rent_monthly,
+    acs_incomes.median_hh_income,
+    ROUND(
+        zillow_rents.median_rent_monthly * 12
+            / NULLIF(acs_incomes.median_hh_income, 0),
+        2
+    )                                    AS rent_burden_ratio,
+FROM pit_counts
+LEFT JOIN coc_metro_map
+    USING (coc_number)
+LEFT JOIN zillow_rents
+    ON coc_metro_map.metro_cbsa = zillow_rents.cbsa_code
+    AND pit_counts.year         = zillow_rents.year
+LEFT JOIN acs_incomes
+    ON coc_metro_map.metro_cbsa = acs_incomes.cbsa_code
+    AND pit_counts.year         = acs_incomes.year`
+    },
+    fct_homelessness: {
+      fname: 'fct_homelessness.sql',
+      sql: `{{ config(materialized='table', tags=['homelessness', 'mart']) }}
+
+WITH rent_burden_coc AS (
+    SELECT
+        coc_number,
+        coc_name,
+        year,
+        total_homeless,
+        homeless_rate_per_10k,
+        homeless_black_pct,
+        median_rent_monthly,
+        rent_burden_ratio,
+    FROM {{ ref('int_rent_burden_coc') }}
+)
+
+SELECT
+    coc_number,
+    coc_name,
+    year,
+    total_homeless,
+    homeless_rate_per_10k,
+    homeless_black_pct,
+    median_rent_monthly,
+    rent_burden_ratio,
+    CASE
+        WHEN homeless_black_pct > 0.37 THEN 'High overrepresentation'
+        WHEN homeless_black_pct > 0.20 THEN 'Moderate overrepresentation'
+        ELSE 'Near national average'
+    END                              AS black_overrep_tier,
+FROM rent_burden_coc
+WHERE year = 2023`
+    },
+    rpt_rent_elasticity: {
+      fname: 'rpt_rent_elasticity.sql',
+      sql: `{{ config(materialized='table', tags=['homelessness', 'mart']) }}
+
+WITH homelessness_data AS (
+    SELECT
+        coc_number,
+        coc_name,
+        homeless_rate_per_10k,
+        median_rent_monthly,
+        rent_burden_ratio,
+        black_overrep_tier,
+    FROM {{ ref('fct_homelessness') }}
+    WHERE median_rent_monthly IS NOT NULL
+      AND homeless_rate_per_10k IS NOT NULL
+),
+
+national_avg AS (
+    SELECT
+        AVG(homeless_rate_per_10k)   AS national_homeless_rate,
+        AVG(median_rent_monthly)     AS national_avg_rent,
+    FROM homelessness_data
+)
+
+SELECT
+    homelessness_data.coc_number,
+    homelessness_data.coc_name,
+    homelessness_data.homeless_rate_per_10k,
+    homelessness_data.median_rent_monthly,
+    homelessness_data.rent_burden_ratio,
+    homelessness_data.black_overrep_tier,
+    ROUND(
+        homelessness_data.homeless_rate_per_10k
+            / NULLIF(national_avg.national_homeless_rate, 0),
+        2
+    )                                AS homeless_rate_index,
+    ROUND(
+        homelessness_data.median_rent_monthly
+            / NULLIF(national_avg.national_avg_rent, 0),
+        2
+    )                                AS rent_index,
+FROM homelessness_data
+CROSS JOIN national_avg
+ORDER BY homelessness_data.homeless_rate_per_10k DESC`
+    }
+  };
+
+  // ── Syntax highlighter ─────────────────────────────────────────────────────
+  const KW = /\b(SELECT|FROM|WHERE|WITH|AS|AND|OR|NOT|IN|IS|NULL|TRUE|FALSE|LEFT|RIGHT|INNER|OUTER|JOIN|ON|USING|GROUP|ORDER|HAVING|CASE|WHEN|THEN|ELSE|END|DISTINCT|LIMIT|ROUND|COUNT|SUM|AVG|MAX|MIN|NULLIF|COALESCE|MEDIAN|BY|ALL|UNION|OVER|PARTITION|FIRST_VALUE|EXTRACT|TRUNC|CROSS|ANY|DISTINCT)\b/g;
+
+  function hl(raw) {
+    return raw
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .split('\n')
+      .map(line => {
+        if (/^\s*--/.test(line)) return '<span class="cm">' + line + '</span>';
+        const ci = line.indexOf('--');
+        const body = ci >= 0 ? line.slice(0, ci) : line;
+        const tail = ci >= 0 ? '<span class="cm">' + line.slice(ci) + '</span>' : '';
+        const out = body
+          .replace(/(\{\{[^}]+\}\})/g, '<span class="fn">$1</span>')
+          .replace(/'([^']*)'/g, "<span class=\"str\">'$1'</span>")
+          .replace(KW, '<span class="kw">$1</span>')
+          .replace(/\b(\d+(?:\.\d+)?)\b/g, '<span class="nm">$1</span>');
+        return out + tail;
+      })
+      .join('\n');
+  }
+
+  // ── Lineage click handler ──────────────────────────────────────────────────
+  const nodes    = document.querySelectorAll('.dn[data-model]');
+  const sqlFname = document.getElementById('sql-fname');
+  const sqlPre   = document.getElementById('sql-pre');
+
+  nodes.forEach(node => {
+    node.addEventListener('click', () => {
+      nodes.forEach(n => n.classList.remove('active'));
+      node.classList.add('active');
+      const entry = SQL_MODELS[node.dataset.model];
+      if (!entry) return;
+      sqlFname.textContent = '// ' + entry.fname;
+      sqlPre.innerHTML = hl(entry.sql);
+    });
   });
 </script>
 </body>

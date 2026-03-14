@@ -49,11 +49,14 @@
     .dagcol{flex:1}
     .dagcollbl{font-family:var(--mono);font-size:0.56rem;letter-spacing:0.12em;text-transform:uppercase;margin-bottom:0.6rem;padding-bottom:0.3rem;border-bottom:1px solid var(--border)}
     .c1lbl{color:#6B9E78} .c2lbl{color:#5B8DB8} .c3lbl{color:#B8955B} .c4lbl{color:var(--a)}
-    .dn{background:var(--bg);border:1px solid var(--border);padding:0.4rem 0.65rem;margin-bottom:0.35rem;font-family:var(--mono);font-size:0.6rem;color:var(--mid);cursor:default;transition:all 0.2s}
+    .dn{background:var(--bg);border:1px solid var(--border);padding:0.4rem 0.65rem;margin-bottom:0.35rem;font-family:var(--mono);font-size:0.6rem;color:var(--mid);cursor:pointer;transition:all 0.2s;user-select:none}
     .dn:hover{border-color:var(--mid);color:var(--text)}
     .dn.s{border-left:2px solid #6B9E78} .dn.st{border-left:2px solid #5B8DB8} .dn.i{border-left:2px solid #B8955B} .dn.m{border-left:2px solid var(--a)}
+    .dn.active{border-color:var(--text);color:var(--text);background:#1c1c1c}
+    .dn.s.active{border-left-color:#6B9E78} .dn.st.active{border-left-color:#5B8DB8} .dn.i.active{border-left-color:#B8955B} .dn.m.active{border-left-color:var(--a)}
     .dnsub{font-size:0.52rem;color:var(--muted);margin-top:0.12rem}
     .dagarr{display:flex;align-items:center;padding-top:1.2rem;color:var(--border);font-size:0.9rem}
+    .sql-fname{font-family:var(--mono);font-size:0.56rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);padding:0.45rem 1.4rem;background:#0A0A0A;border:1px solid var(--border);border-bottom:none}
     .code{background:#111;border:1px solid var(--border);overflow-x:auto;margin-bottom:1rem}
     .code pre{font-family:var(--mono);font-size:0.7rem;line-height:1.75;color:#888;padding:1.1rem 1.4rem;white-space:pre}
     .kw{color:#E85D26} .fn{color:#7BB8D4} .str{color:#7DAD6F} .cm{color:#444} .vr{color:#C4A96A} .nm{color:#B07FD4}
@@ -128,32 +131,32 @@
         </div>
 
         <div class="dagwrap">
-          <div class="daglbl">// dbt model lineage</div>
+          <div class="daglbl">// dbt model lineage — click any node to view SQL</div>
           <div class="dagflow">
             <div class="dagcol">
               <div class="dagcollbl c1lbl">Sources</div>
-              <div class="dn s">cps_pums</div>
-              <div class="dn s">bls_oes</div>
-              <div class="dn s">census_ipums</div>
+              <div class="dn s" data-model="cps_pums">cps_pums</div>
+              <div class="dn s" data-model="bls_oes">bls_oes</div>
+              <div class="dn s" data-model="census_ipums">census_ipums</div>
             </div>
             <div class="dagarr">→</div>
             <div class="dagcol">
               <div class="dagcollbl c2lbl">Staging</div>
-              <div class="dn st">stg_workers</div>
-              <div class="dn st">stg_industries</div>
-              <div class="dn st">stg_occupations</div>
+              <div class="dn st" data-model="stg_workers">stg_workers</div>
+              <div class="dn st" data-model="stg_industries">stg_industries</div>
+              <div class="dn st" data-model="stg_occupations">stg_occupations</div>
             </div>
             <div class="dagarr">→</div>
             <div class="dagcol">
               <div class="dagcollbl c3lbl">Int</div>
-              <div class="dn i">int_worker_enriched</div>
-              <div class="dn i">int_gap_calcs</div>
+              <div class="dn i" data-model="int_worker_enriched">int_worker_enriched</div>
+              <div class="dn i" data-model="int_gap_calcs">int_gap_calcs</div>
             </div>
             <div class="dagarr">→</div>
             <div class="dagcol">
               <div class="dagcollbl c4lbl">Marts</div>
-              <div class="dn m">fct_wages</div>
-              <div class="dn m">rpt_gap_by_cut</div>
+              <div class="dn m" data-model="fct_wages">fct_wages</div>
+              <div class="dn m" data-model="rpt_gap_by_cut">rpt_gap_by_cut</div>
             </div>
           </div>
         </div>
@@ -177,29 +180,11 @@
           <canvas id="gapChart"></canvas>
         </div>
 
-        <div class="code">
-          <pre><span class="cm">-- int_gap_calcs.sql</span>
-<span class="kw">with</span> by_group <span class="kw">as</span> (
-    <span class="kw">select</span>
-        industry_group, race_category, gender, education_level,
-        <span class="fn">median</span>(weekly_earnings)  <span class="kw">as</span> median_earnings,
-        <span class="fn">count</span>(*)               <span class="kw">as</span> n_workers
-    <span class="kw">from</span> {{ <span class="fn">ref</span>(<span class="str">'int_worker_enriched'</span>) }}
-    <span class="kw">where</span> full_time_flag = <span class="kw">true</span> <span class="kw">and</span> weekly_earnings > <span class="nm">0</span>
-    <span class="kw">group by</span> 1,2,3,4
-),
-baseline <span class="kw">as</span> (
-    <span class="kw">select</span> industry_group, education_level,
-           median_earnings <span class="kw">as</span> baseline_earnings
-    <span class="kw">from</span> by_group
-    <span class="kw">where</span> race_category = <span class="str">'White'</span> <span class="kw">and</span> gender = <span class="str">'Male'</span>
-)
-<span class="kw">select</span>
-    g.*,
-    b.baseline_earnings,
-    <span class="fn">round</span>(g.median_earnings / b.baseline_earnings, 4) <span class="kw">as</span> earnings_ratio
-<span class="kw">from</span> by_group g
-<span class="kw">left join</span> baseline b <span class="kw">using</span> (industry_group, education_level)</pre>
+        <div class="sql-fname" id="sql-fname">// select a model from the lineage to view its SQL</div>
+        <div class="code" id="sql-panel">
+          <pre id="sql-pre"><span class="cm">-- Click any node in the dbt lineage diagram to view its SQL.
+-- Sources show schema definitions; staging, intermediate,
+-- and mart models show the full dbt SQL file.</span></pre>
         </div>
       </div>
 
@@ -244,6 +229,363 @@ baseline <span class="kw">as</span> (
       datasets: [{ data: gaps, backgroundColor: gaps.map(v => v < 80 ? '#E85D26AA' : v < 88 ? '#E85D2655' : '#4A9E8E44'), borderColor: gaps.map(v => v < 80 ? '#E85D26' : v < 88 ? '#E85D26' : '#4A9E8E'), borderWidth: 1.5 }]
     },
     options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false }, tooltip: { ...T, callbacks: { label: c => ' ' + c.raw + 'c per $1 earned by men' } } }, scales: { x: { grid: G, border: { display: false }, min: 60, max: 100, ticks: { callback: v => v + '%' } }, y: { grid: { display: false }, border: { display: false } } } }
+  });
+
+  // ── SQL model content ──────────────────────────────────────────────────────
+  const SQL_MODELS = {
+    cps_pums: {
+      fname: 'sources.yml',
+      sql: `-- source: bls.cps_pums
+-- BLS Current Population Survey Public Use Microdata.
+-- One row per survey respondent (employed civilian worker).
+-- Annual release; used for calendar year wage analysis.
+--
+-- Key fields:
+--   pwsswgt       -- survey person weight (use in all aggregations)
+--   a_age         -- age in years
+--   prdtrace      -- detailed race classification
+--   a_sex         -- sex (1=Male, 2=Female)
+--   a_mjind       -- major industry group code
+--   a_occ         -- occupation code (SOC basis)
+--   wsal_val      -- wage and salary income (annual)
+--   prwksch       -- usual weekly hours worked
+--   a_hga         -- educational attainment`
+    },
+    bls_oes: {
+      fname: 'sources.yml',
+      sql: `-- source: bls.oes_national
+-- BLS Occupational Employment and Wage Statistics.
+-- National-level median wages by occupation and industry.
+-- May release; used for occupational wage benchmarks.
+--
+-- Key fields:
+--   occ_code   -- SOC occupation code (6-digit)
+--   occ_title  -- occupation title
+--   naics      -- industry NAICS code
+--   h_median   -- median hourly wage
+--   a_median   -- median annual wage
+--   tot_emp    -- total employment estimate`
+    },
+    census_ipums: {
+      fname: 'sources.yml',
+      sql: `-- source: ipums.cps_historical
+-- IPUMS harmonized CPS extracts for historical comparison.
+-- Consistent variable coding across survey years 1980-2023.
+--
+-- Key fields:
+--   year       -- survey year
+--   wtsupp     -- supplement weight
+--   race       -- harmonized race code (IPUMS)
+--   sex        -- sex (1=Male, 2=Female)
+--   ind        -- industry code (harmonized)
+--   occ        -- occupation code (harmonized)
+--   incwage    -- wage and salary income`
+    },
+    stg_workers: {
+      fname: 'stg_workers.sql',
+      sql: `{{ config(materialized='view', tags=['wages', 'staging']) }}
+
+WITH raw_cps AS (
+    SELECT
+        pwsswgt         AS survey_weight,
+        a_age           AS age,
+        prdtrace        AS race_code,
+        a_sex           AS sex_code,
+        a_mjind         AS industry_code,
+        a_occ           AS occupation_code,
+        wsal_val        AS annual_wage,
+        prwksch         AS usual_weekly_hours,
+        a_hga           AS education_code,
+        a_year          AS survey_year,
+    FROM {{ source('bls', 'cps_pums') }}
+    WHERE wsal_val > 0
+      AND prwksch >= 35  -- full-time workers only
+)
+
+SELECT
+    survey_weight,
+    age,
+    CASE race_code
+        WHEN 1 THEN 'White'
+        WHEN 2 THEN 'Black'
+        WHEN 3 THEN 'Native American'
+        WHEN 4 THEN 'Asian'
+        WHEN 6 THEN 'Multiracial'
+        ELSE 'Other'
+    END                                       AS race_category,
+    CASE sex_code WHEN 1 THEN 'Male' ELSE 'Female' END AS gender,
+    industry_code,
+    occupation_code,
+    annual_wage,
+    ROUND(annual_wage / 52.0, 2)              AS weekly_earnings,
+    usual_weekly_hours,
+    education_code,
+    survey_year,
+FROM raw_cps`
+    },
+    stg_industries: {
+      fname: 'stg_industries.sql',
+      sql: `{{ config(materialized='view', tags=['wages', 'staging']) }}
+
+WITH raw_industries AS (
+    SELECT
+        ind_code,
+        ind_title,
+        ind_sector,
+        naics_prefix,
+    FROM {{ source('bls', 'cps_industry_codes') }}
+)
+
+SELECT
+    ind_code         AS industry_code,
+    ind_title        AS industry_label,
+    CASE ind_sector
+        WHEN 'FIN' THEN 'Finance'
+        WHEN 'TEC' THEN 'Tech'
+        WHEN 'HLT' THEN 'Healthcare'
+        WHEN 'EDU' THEN 'Education'
+        WHEN 'RTL' THEN 'Retail'
+        WHEN 'CON' THEN 'Construction'
+        WHEN 'GOV' THEN 'Government'
+        WHEN 'ART' THEN 'Arts'
+        ELSE 'Other'
+    END              AS industry_group,
+    naics_prefix,
+FROM raw_industries`
+    },
+    stg_occupations: {
+      fname: 'stg_occupations.sql',
+      sql: `{{ config(materialized='view', tags=['wages', 'staging']) }}
+
+WITH raw_occ AS (
+    SELECT
+        occ_code,
+        occ_title,
+        h_median   AS median_hourly_wage,
+        a_median   AS median_annual_wage,
+        tot_emp    AS total_employment,
+    FROM {{ source('bls', 'oes_national') }}
+)
+
+SELECT
+    occ_code,
+    occ_title,
+    ROUND(median_hourly_wage, 2)  AS median_hourly_wage,
+    ROUND(median_annual_wage, 0)  AS median_annual_wage,
+    total_employment,
+FROM raw_occ
+WHERE median_annual_wage IS NOT NULL`
+    },
+    int_worker_enriched: {
+      fname: 'int_worker_enriched.sql',
+      sql: `{{ config(materialized='table', tags=['wages', 'intermediate']) }}
+
+WITH workers AS (
+    SELECT
+        survey_weight,
+        age,
+        race_category,
+        gender,
+        industry_code,
+        weekly_earnings,
+        education_code,
+        survey_year,
+    FROM {{ ref('stg_workers') }}
+),
+
+industries AS (
+    SELECT
+        industry_code,
+        industry_group,
+        industry_label,
+    FROM {{ ref('stg_industries') }}
+),
+
+education_map AS (
+    SELECT
+        education_code,
+        CASE
+            WHEN education_code < 39 THEN 'Less than high school'
+            WHEN education_code = 39 THEN 'High school diploma'
+            WHEN education_code IN (40, 41, 42) THEN 'Some college'
+            WHEN education_code = 43 THEN 'Bachelor degree'
+            ELSE 'Graduate degree'
+        END AS education_level,
+    FROM {{ ref('stg_education_codes') }}
+)
+
+SELECT
+    workers.survey_weight,
+    workers.age,
+    workers.race_category,
+    workers.gender,
+    workers.weekly_earnings,
+    workers.survey_year,
+    industries.industry_group,
+    industries.industry_label,
+    education_map.education_level,
+FROM workers
+LEFT JOIN industries
+    USING (industry_code)
+LEFT JOIN education_map
+    USING (education_code)
+WHERE industries.industry_group IS NOT NULL`
+    },
+    int_gap_calcs: {
+      fname: 'int_gap_calcs.sql',
+      sql: `{{ config(materialized='table', tags=['wages', 'intermediate']) }}
+
+WITH earnings_by_group AS (
+    SELECT
+        industry_group,
+        race_category,
+        gender,
+        education_level,
+        MEDIAN(weekly_earnings)  AS median_earnings,
+        COUNT(*)                 AS worker_count,
+    FROM {{ ref('int_worker_enriched') }}
+    WHERE weekly_earnings > 0
+    GROUP BY
+        industry_group,
+        race_category,
+        gender,
+        education_level
+),
+
+white_male_baseline AS (
+    SELECT
+        industry_group,
+        education_level,
+        median_earnings          AS baseline_earnings,
+    FROM earnings_by_group
+    WHERE race_category = 'White'
+      AND gender = 'Male'
+)
+
+SELECT
+    earnings_by_group.industry_group,
+    earnings_by_group.race_category,
+    earnings_by_group.gender,
+    earnings_by_group.education_level,
+    earnings_by_group.median_earnings,
+    earnings_by_group.worker_count,
+    white_male_baseline.baseline_earnings,
+    ROUND(
+        earnings_by_group.median_earnings
+            / NULLIF(white_male_baseline.baseline_earnings, 0),
+        4
+    )                            AS earnings_ratio,
+FROM earnings_by_group
+LEFT JOIN white_male_baseline
+    USING (industry_group, education_level)`
+    },
+    fct_wages: {
+      fname: 'fct_wages.sql',
+      sql: `{{ config(materialized='table', tags=['wages', 'mart']) }}
+
+WITH gap_calculations AS (
+    SELECT
+        industry_group,
+        race_category,
+        gender,
+        education_level,
+        median_earnings,
+        worker_count,
+        baseline_earnings,
+        earnings_ratio,
+    FROM {{ ref('int_gap_calcs') }}
+)
+
+SELECT
+    industry_group,
+    race_category,
+    gender,
+    education_level,
+    median_earnings,
+    worker_count,
+    baseline_earnings,
+    earnings_ratio,
+    ROUND((1 - earnings_ratio) * 100, 1)  AS gap_pct,
+    ROUND(
+        baseline_earnings - median_earnings,
+        0
+    )                                     AS gap_dollars_per_week,
+FROM gap_calculations
+WHERE worker_count >= 50  -- suppress small cells`
+    },
+    rpt_gap_by_cut: {
+      fname: 'rpt_gap_by_cut.sql',
+      sql: `{{ config(materialized='table', tags=['wages', 'mart']) }}
+
+WITH wages AS (
+    SELECT
+        industry_group,
+        race_category,
+        gender,
+        median_earnings,
+        gap_pct,
+        gap_dollars_per_week,
+        worker_count,
+    FROM {{ ref('fct_wages') }}
+),
+
+gender_gap_by_industry AS (
+    SELECT
+        industry_group,
+        ROUND(
+            AVG(CASE WHEN gender = 'Female' THEN gap_pct END),
+            1
+        )                AS avg_gender_gap_pct,
+        SUM(worker_count) AS total_workers,
+    FROM wages
+    GROUP BY industry_group
+)
+
+SELECT
+    gender_gap_by_industry.industry_group,
+    gender_gap_by_industry.avg_gender_gap_pct,
+    gender_gap_by_industry.total_workers,
+FROM gender_gap_by_industry
+ORDER BY gender_gap_by_industry.avg_gender_gap_pct DESC`
+    }
+  };
+
+  // ── Syntax highlighter ─────────────────────────────────────────────────────
+  const KW = /\b(SELECT|FROM|WHERE|WITH|AS|AND|OR|NOT|IN|IS|NULL|TRUE|FALSE|LEFT|RIGHT|INNER|OUTER|JOIN|ON|USING|GROUP|ORDER|HAVING|CASE|WHEN|THEN|ELSE|END|DISTINCT|LIMIT|ROUND|COUNT|SUM|AVG|MAX|MIN|NULLIF|COALESCE|MEDIAN|BY|ALL|UNION|OVER|PARTITION|FIRST_VALUE|EXTRACT|TRUNC)\b/g;
+
+  function hl(raw) {
+    return raw
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .split('\n')
+      .map(line => {
+        if (/^\s*--/.test(line)) return '<span class="cm">' + line + '</span>';
+        const ci = line.indexOf('--');
+        const body = ci >= 0 ? line.slice(0, ci) : line;
+        const tail = ci >= 0 ? '<span class="cm">' + line.slice(ci) + '</span>' : '';
+        const out = body
+          .replace(/(\{\{[^}]+\}\})/g, '<span class="fn">$1</span>')
+          .replace(/'([^']*)'/g, "<span class=\"str\">'$1'</span>")
+          .replace(KW, '<span class="kw">$1</span>')
+          .replace(/\b(\d+(?:\.\d+)?)\b/g, '<span class="nm">$1</span>');
+        return out + tail;
+      })
+      .join('\n');
+  }
+
+  // ── Lineage click handler ──────────────────────────────────────────────────
+  const nodes    = document.querySelectorAll('.dn[data-model]');
+  const sqlFname = document.getElementById('sql-fname');
+  const sqlPre   = document.getElementById('sql-pre');
+
+  nodes.forEach(node => {
+    node.addEventListener('click', () => {
+      nodes.forEach(n => n.classList.remove('active'));
+      node.classList.add('active');
+      const entry = SQL_MODELS[node.dataset.model];
+      if (!entry) return;
+      sqlFname.textContent = '// ' + entry.fname;
+      sqlPre.innerHTML = hl(entry.sql);
+    });
   });
 </script>
 </body>

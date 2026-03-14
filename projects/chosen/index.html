@@ -1,0 +1,1322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chosen? — A Data Story on Free Will & Recidivism</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=IBM+Plex+Mono:wght@300;400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --ink: #0e0e0e;
+    --paper: #f5f0e8;
+    --paper-dark: #ede7d5;
+    --red: #c0392b;
+    --red-muted: #e8b4ae;
+    --blue: #1a3a5c;
+    --blue-muted: #a8c0d6;
+    --gold: #c9922a;
+    --gray: #6b6b6b;
+    --light-gray: #d4cfc4;
+    --serif: 'Playfair Display', Georgia, serif;
+    --mono: 'IBM Plex Mono', monospace;
+    --sans: 'IBM Plex Sans', sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-weight: 300;
+    overflow-x: hidden;
+  }
+
+  /* ── PORTFOLIO NAV ── */
+  #portfolio-nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 48px;
+    background: rgba(14,14,14,0.92);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 8vw;
+    z-index: 1001;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+
+  #portfolio-nav a.nav-back {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(245,240,232,0.5);
+    text-decoration: none;
+    transition: color 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  #portfolio-nav a.nav-back:hover { color: var(--red); }
+
+  #portfolio-nav .nav-label {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: rgba(245,240,232,0.2);
+  }
+
+  /* ── PROGRESS BAR ── */
+  #progress-bar {
+    position: fixed;
+    top: 48px; left: 0;
+    height: 3px;
+    background: var(--red);
+    width: 0%;
+    z-index: 1000;
+    transition: width 0.1s linear;
+  }
+
+  /* ── HERO ── */
+  #hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 80px 8vw;
+    padding-top: 128px;
+    position: relative;
+    background: var(--ink);
+    overflow: hidden;
+  }
+
+  #hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 39px,
+      rgba(255,255,255,0.03) 39px,
+      rgba(255,255,255,0.03) 40px
+    );
+    pointer-events: none;
+  }
+
+  .hero-eyebrow {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    font-weight: 400;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--red);
+    margin-bottom: 2rem;
+    opacity: 0;
+    animation: fadeUp 0.8s ease 0.3s forwards;
+  }
+
+  .hero-title {
+    font-family: var(--serif);
+    font-size: clamp(5rem, 14vw, 13rem);
+    font-weight: 900;
+    font-style: italic;
+    color: var(--paper);
+    line-height: 0.88;
+    letter-spacing: -0.02em;
+    opacity: 0;
+    animation: fadeUp 1s ease 0.5s forwards;
+  }
+
+  .hero-title span {
+    color: var(--red);
+    display: inline-block;
+  }
+
+  .hero-subtitle {
+    font-family: var(--sans);
+    font-size: clamp(1rem, 2vw, 1.25rem);
+    font-weight: 300;
+    color: rgba(245,240,232,0.65);
+    max-width: 520px;
+    margin-top: 3rem;
+    line-height: 1.7;
+    opacity: 0;
+    animation: fadeUp 1s ease 0.8s forwards;
+  }
+
+  .hero-scroll {
+    position: absolute;
+    bottom: 3rem;
+    left: 8vw;
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    color: rgba(245,240,232,0.35);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    opacity: 0;
+    animation: fadeUp 1s ease 1.2s forwards;
+  }
+
+  .hero-scroll::after {
+    content: '';
+    display: block;
+    width: 40px;
+    height: 1px;
+    background: rgba(245,240,232,0.35);
+    animation: expandLine 1.5s ease 1.5s forwards;
+    width: 0;
+  }
+
+  @keyframes expandLine {
+    to { width: 40px; }
+  }
+
+  .hero-stat {
+    position: absolute;
+    right: 8vw;
+    bottom: 8vh;
+    text-align: right;
+    opacity: 0;
+    animation: fadeUp 1s ease 1s forwards;
+  }
+
+  .hero-stat-num {
+    font-family: var(--serif);
+    font-size: clamp(3rem, 6vw, 5rem);
+    font-weight: 900;
+    color: var(--red);
+    line-height: 1;
+  }
+
+  .hero-stat-label {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: rgba(245,240,232,0.4);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-top: 0.5rem;
+    max-width: 180px;
+    margin-left: auto;
+    line-height: 1.5;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── SECTIONS ── */
+  .section {
+    padding: clamp(80px, 12vh, 140px) 8vw;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .section-full {
+    padding: clamp(80px, 12vh, 140px) 8vw;
+    width: 100%;
+  }
+
+  .section-dark {
+    background: var(--ink);
+    color: var(--paper);
+    max-width: 100%;
+    padding: clamp(80px, 12vh, 140px) 8vw;
+  }
+
+  .section-number {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    color: var(--red);
+    text-transform: uppercase;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .section-number::after {
+    content: '';
+    display: block;
+    width: 40px;
+    height: 1px;
+    background: var(--red);
+  }
+
+  h2 {
+    font-family: var(--serif);
+    font-size: clamp(2.2rem, 5vw, 4rem);
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    margin-bottom: 2rem;
+  }
+
+  .section-dark h2 { color: var(--paper); }
+
+  h3 {
+    font-family: var(--serif);
+    font-size: clamp(1.4rem, 2.5vw, 2rem);
+    font-weight: 700;
+    margin-bottom: 1rem;
+  }
+
+  p {
+    font-size: clamp(1rem, 1.5vw, 1.15rem);
+    line-height: 1.8;
+    color: #333;
+    max-width: 680px;
+    margin-bottom: 1.5rem;
+  }
+
+  .section-dark p { color: rgba(245,240,232,0.75); }
+
+  .lead {
+    font-family: var(--serif);
+    font-size: clamp(1.3rem, 2.5vw, 1.8rem);
+    font-weight: 400;
+    font-style: italic;
+    line-height: 1.5;
+    color: var(--ink);
+    max-width: 780px;
+    margin-bottom: 2.5rem;
+  }
+
+  .section-dark .lead { color: var(--paper); }
+
+  /* ── PULL QUOTES ── */
+  .pullquote {
+    border-left: 4px solid var(--red);
+    padding: 1.5rem 2rem;
+    margin: 3rem 0;
+    max-width: 700px;
+    background: var(--paper-dark);
+  }
+
+  .pullquote p {
+    font-family: var(--serif);
+    font-size: clamp(1.2rem, 2vw, 1.6rem);
+    font-style: italic;
+    color: var(--ink);
+    margin-bottom: 0.5rem;
+  }
+
+  .pullquote cite {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    color: var(--gray);
+    letter-spacing: 0.1em;
+  }
+
+  .section-dark .pullquote {
+    background: rgba(255,255,255,0.05);
+  }
+
+  .section-dark .pullquote p { color: var(--paper); }
+
+  /* ── STAT CARDS ── */
+  .stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1.5px;
+    margin: 3rem 0;
+    background: var(--light-gray);
+  }
+
+  .stat-card {
+    background: var(--paper);
+    padding: 2.5rem 2rem;
+  }
+
+  .section-dark .stat-grid { background: rgba(255,255,255,0.1); }
+  .section-dark .stat-card { background: rgba(255,255,255,0.04); }
+
+  .stat-number {
+    font-family: var(--serif);
+    font-size: clamp(2.5rem, 5vw, 4rem);
+    font-weight: 900;
+    color: var(--red);
+    line-height: 1;
+    margin-bottom: 0.75rem;
+  }
+
+  .stat-label {
+    font-family: var(--sans);
+    font-size: 0.9rem;
+    font-weight: 400;
+    line-height: 1.5;
+    color: var(--gray);
+  }
+
+  .section-dark .stat-label { color: rgba(245,240,232,0.5); }
+
+  .stat-source {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    color: var(--light-gray);
+    margin-top: 0.5rem;
+    letter-spacing: 0.05em;
+  }
+
+  /* ── CHART CONTAINERS ── */
+  .chart-wrap {
+    margin: 3rem 0;
+    padding: 2.5rem;
+    background: white;
+    border: 1px solid var(--light-gray);
+  }
+
+  .section-dark .chart-wrap {
+    background: rgba(255,255,255,0.04);
+    border-color: rgba(255,255,255,0.1);
+  }
+
+  .chart-title {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--gray);
+    margin-bottom: 1.5rem;
+  }
+
+  .section-dark .chart-title { color: rgba(245,240,232,0.4); }
+
+  canvas { max-width: 100%; }
+
+  /* ── FEATURE BAR (predictors) ── */
+  .feature-list {
+    margin: 2.5rem 0;
+  }
+
+  .feature-item {
+    display: grid;
+    grid-template-columns: 220px 1fr 60px;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 0;
+    border-bottom: 1px solid var(--light-gray);
+    opacity: 0;
+    transform: translateX(-20px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+  }
+
+  .section-dark .feature-item { border-bottom-color: rgba(255,255,255,0.08); }
+
+  .feature-item.visible {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  .feature-name {
+    font-family: var(--sans);
+    font-size: 0.9rem;
+    font-weight: 500;
+  }
+
+  .feature-chosen {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    padding: 0.2rem 0.6rem;
+    margin-left: 0.5rem;
+    text-transform: uppercase;
+  }
+
+  .chosen-no {
+    background: rgba(192,57,43,0.12);
+    color: var(--red);
+  }
+
+  .chosen-maybe {
+    background: rgba(201,146,42,0.12);
+    color: var(--gold);
+  }
+
+  .feature-bar-track {
+    height: 8px;
+    background: var(--light-gray);
+    border-radius: 0;
+    overflow: hidden;
+  }
+
+  .section-dark .feature-bar-track { background: rgba(255,255,255,0.1); }
+
+  .feature-bar-fill {
+    height: 100%;
+    background: var(--red);
+    width: 0%;
+    transition: width 1s ease;
+    border-radius: 0;
+  }
+
+  .feature-bar-fill.medium { background: var(--gold); }
+
+  .feature-importance {
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    text-align: right;
+    color: var(--gray);
+  }
+
+  .section-dark .feature-importance { color: rgba(245,240,232,0.5); }
+
+  /* ── PHILOSOPHY CARDS ── */
+  .philosophy-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 2px;
+    margin: 3rem 0;
+    background: rgba(255,255,255,0.1);
+  }
+
+  .philosophy-card {
+    background: var(--ink);
+    padding: 2.5rem 2rem;
+    border-top: 3px solid transparent;
+    transition: border-color 0.3s ease;
+  }
+
+  .philosophy-card:hover { border-color: var(--red); }
+  .philosophy-card.kant { border-color: var(--blue); }
+  .philosophy-card.strawson { border-color: var(--gold); }
+  .philosophy-card.dennett { border-color: var(--red); }
+
+  .phil-thinker {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 1rem;
+  }
+
+  .kant .phil-thinker { color: var(--blue-muted); }
+  .strawson .phil-thinker { color: #d4b88a; }
+  .dennett .phil-thinker { color: var(--red-muted); }
+
+  .phil-position {
+    font-family: var(--serif);
+    font-size: 1.15rem;
+    font-style: italic;
+    color: var(--paper);
+    line-height: 1.5;
+    margin-bottom: 1rem;
+  }
+
+  .phil-detail {
+    font-size: 0.9rem;
+    color: rgba(245,240,232,0.5);
+    line-height: 1.6;
+    margin-bottom: 0;
+    max-width: 100%;
+  }
+
+  .phil-verdict {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(255,255,255,0.1);
+    color: rgba(245,240,232,0.4);
+  }
+
+  /* ── COMPARISON TABLE ── */
+  .compare-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 2.5rem 0;
+    font-size: 0.95rem;
+  }
+
+  .compare-table th {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 1rem 1.5rem;
+    text-align: left;
+    border-bottom: 2px solid var(--light-gray);
+    color: var(--gray);
+  }
+
+  .compare-table td {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--light-gray);
+    vertical-align: top;
+    line-height: 1.6;
+  }
+
+  .compare-table tr:hover td { background: var(--paper-dark); }
+
+  .compare-table .highlight {
+    color: var(--red);
+    font-weight: 500;
+  }
+
+  /* ── CLOSING ── */
+  #closing {
+    min-height: 100vh;
+    background: var(--ink);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 8vw;
+    position: relative;
+    overflow: hidden;
+  }
+
+  #closing::before {
+    content: '?';
+    position: absolute;
+    font-family: var(--serif);
+    font-size: 60vw;
+    font-weight: 900;
+    font-style: italic;
+    color: rgba(255,255,255,0.02);
+    right: -10vw;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    line-height: 1;
+  }
+
+  .closing-inner {
+    max-width: 780px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .closing-inner h2 {
+    font-family: var(--serif);
+    font-size: clamp(2.5rem, 6vw, 5rem);
+    font-weight: 900;
+    font-style: italic;
+    color: var(--paper);
+    line-height: 1.05;
+    margin-bottom: 2.5rem;
+  }
+
+  .closing-inner h2 em {
+    color: var(--red);
+    font-style: normal;
+  }
+
+  .closing-inner p {
+    color: rgba(245,240,232,0.7);
+    max-width: 100%;
+    font-size: clamp(1rem, 1.6vw, 1.2rem);
+  }
+
+  /* ── FOOTER ── */
+  footer {
+    background: #080808;
+    padding: 4rem 8vw;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 2rem;
+  }
+
+  .footer-title {
+    font-family: var(--serif);
+    font-size: 1.5rem;
+    font-style: italic;
+    color: var(--paper);
+    margin-bottom: 0.5rem;
+  }
+
+  .footer-meta {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: rgba(245,240,232,0.25);
+    letter-spacing: 0.1em;
+    line-height: 1.8;
+  }
+
+  .footer-sources h4 {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: rgba(245,240,232,0.3);
+    margin-bottom: 1rem;
+  }
+
+  .footer-sources ul {
+    list-style: none;
+  }
+
+  .footer-sources li {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    color: rgba(245,240,232,0.2);
+    line-height: 2;
+    letter-spacing: 0.05em;
+  }
+
+  /* ── DIVIDER ── */
+  .divider {
+    width: 60px;
+    height: 2px;
+    background: var(--red);
+    margin: 3rem 0;
+  }
+
+  /* ── MODEL ACCURACY VISUAL ── */
+  .accuracy-visual {
+    margin: 3rem 0;
+    padding: 3rem;
+    background: var(--paper-dark);
+    border: 1px solid var(--light-gray);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1.5rem;
+  }
+
+  .accuracy-label {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--gray);
+  }
+
+  .accuracy-bar-outer {
+    width: 100%;
+    height: 48px;
+    background: var(--light-gray);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .accuracy-bar-inner {
+    height: 100%;
+    background: var(--red);
+    width: 0%;
+    transition: width 1.5s cubic-bezier(0.16, 1, 0.3, 1);
+    display: flex;
+    align-items: center;
+    padding-left: 1rem;
+  }
+
+  .accuracy-bar-inner span {
+    font-family: var(--serif);
+    font-weight: 700;
+    font-size: 1.2rem;
+    color: white;
+    white-space: nowrap;
+  }
+
+  .accuracy-remainder {
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--gray);
+  }
+
+  /* ── SCROLL ANIMATIONS ── */
+  .reveal {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+  }
+
+  .reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* ── NORWAY COMPARISON ── */
+  .country-compare {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2px;
+    margin: 2.5rem 0;
+    background: var(--light-gray);
+  }
+
+  .country-card {
+    padding: 3rem 2.5rem;
+    background: var(--paper);
+  }
+
+  .country-card.highlight-card {
+    background: var(--ink);
+  }
+
+  .country-name {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-bottom: 1.5rem;
+    color: var(--gray);
+  }
+
+  .country-card.highlight-card .country-name {
+    color: rgba(245,240,232,0.4);
+  }
+
+  .country-rate {
+    font-family: var(--serif);
+    font-size: clamp(3.5rem, 7vw, 6rem);
+    font-weight: 900;
+    line-height: 1;
+    margin-bottom: 1rem;
+  }
+
+  .country-card .country-rate { color: var(--red); }
+  .country-card.highlight-card .country-rate { color: var(--paper); }
+
+  .country-desc {
+    font-size: 0.9rem;
+    line-height: 1.6;
+    color: var(--gray);
+    max-width: 100%;
+    margin-bottom: 0.5rem;
+  }
+
+  .country-card.highlight-card .country-desc {
+    color: rgba(245,240,232,0.5);
+  }
+
+  .country-note {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    color: var(--light-gray);
+    margin-top: 1.5rem;
+    letter-spacing: 0.05em;
+  }
+
+  .country-card.highlight-card .country-note {
+    color: rgba(245,240,232,0.2);
+  }
+
+  @media (max-width: 600px) {
+    .country-compare { grid-template-columns: 1fr; }
+    .feature-item { grid-template-columns: 1fr; }
+    footer { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── PORTFOLIO NAV ── -->
+<nav id="portfolio-nav">
+  <a href="../../index.html" class="nav-back">&#8592; Portfolio</a>
+  <span class="nav-label">07 / Free Will &amp; Recidivism</span>
+</nav>
+
+<div id="progress-bar"></div>
+
+<!-- ══════════════════════════════════════════════
+     HERO
+══════════════════════════════════════════════ -->
+<section id="hero">
+  <div class="hero-eyebrow">A Data Story on Free Will &amp; Recidivism</div>
+  <h1 class="hero-title">Chosen<span>?</span></h1>
+  <p class="hero-subtitle">
+    Two-thirds of people released from prison in America are rearrested within three years.
+    We call this a failure of character. The data suggests it might be something else entirely.
+  </p>
+  <div class="hero-scroll">SCROLL TO EXPLORE</div>
+  <div class="hero-stat">
+    <div class="hero-stat-num">68%</div>
+    <div class="hero-stat-label">rearrested within 3 years of release — U.S. average</div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════
+     SECTION 1: THE SCALE
+══════════════════════════════════════════════ -->
+<div class="section reveal">
+  <div class="section-number">01 — The Scale</div>
+  <h2>This isn't a rare failure. It's the rule.</h2>
+  <p class="lead">Every year, roughly 600,000 people are released from U.S. prisons. Within five years, nearly three-quarters will be rearrested. We've been treating this as a moral problem. What if it's a structural one?</p>
+
+  <div class="stat-grid">
+    <div class="stat-card">
+      <div class="stat-number">68%</div>
+      <div class="stat-label">rearrested within 3 years of release</div>
+      <div class="stat-source">SOURCE: BJS, 2018 RECIDIVISM STUDY</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number">83%</div>
+      <div class="stat-label">rearrested within 9 years of release</div>
+      <div class="stat-source">SOURCE: BJS, 2018 RECIDIVISM STUDY</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number">600K</div>
+      <div class="stat-label">people released from U.S. prisons each year</div>
+      <div class="stat-source">SOURCE: PEW CHARITABLE TRUSTS</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number">$39K</div>
+      <div class="stat-label">average annual cost to incarcerate one person</div>
+      <div class="stat-source">SOURCE: VERA INSTITUTE, 2022</div>
+    </div>
+  </div>
+
+  <p>These numbers have remained stubbornly consistent for decades despite billions spent on incarceration. If the system were working as a deterrent, we'd expect to see improvement. We don't. That should prompt a question: what if the theory of change — that punishment deters — is built on a flawed premise about human agency?</p>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SECTION 2: THE NAIVE MODEL
+══════════════════════════════════════════════ -->
+<div class="section-dark reveal" style="max-width:100%;">
+  <div class="section" style="padding-top:0; padding-bottom:0;">
+    <div class="section-number">02 — The Assumption</div>
+    <h2>The story we tell ourselves</h2>
+    <p class="lead">"They chose to reoffend." This is the implicit premise of retributive justice — the idea that punishment is deserved because the person freely chose to do wrong, and could have chosen otherwise.</p>
+
+    <p>It's a philosophically coherent position. Kant argued that to deny someone's moral responsibility is actually to deny their humanity — to treat them as a machine rather than a rational agent. There's something genuinely important in that intuition.</p>
+
+    <div class="pullquote">
+      <p>"To act freely is to act from reason, not from inclination or circumstance."</p>
+      <cite>— IMMANUEL KANT, GROUNDWORK FOR THE METAPHYSICS OF MORALS (1785)</cite>
+    </div>
+
+    <p>But this model makes an assumption: that at the moment of choice, circumstances are not the dominant force. That the person standing at a decision point is, in any meaningful sense, equally free to go either way.</p>
+    <p>The data has something uncomfortable to say about that assumption.</p>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SECTION 3: PREDICTORS
+══════════════════════════════════════════════ -->
+<div class="section reveal">
+  <div class="section-number">03 — The Predictors</div>
+  <h2>What actually predicts reoffending</h2>
+  <p class="lead">Using data from the NIJ Recidivism Challenge dataset — nearly 26,000 individuals tracked over three years — a logistic regression model trained only on pre-choice variables achieves strong predictive accuracy.</p>
+
+  <p>The key word: <em>pre-choice.</em> These are factors fixed before any "decision" to reoffend was ever made. No measure of intent, motivation, or character. Only circumstance.</p>
+
+  <div class="chart-title">Feature importance — ensemble of logistic regression + random forest + gradient boosting (normalized 0–1)</div>
+  <div class="feature-list" id="feature-list">
+    <div class="feature-item">
+      <div><span class="feature-name">Prior arrest count</span><span class="feature-chosen chosen-no">not chosen</span></div>
+      <div class="feature-bar-track"><div class="feature-bar-fill" data-width="100"></div></div>
+      <div class="feature-importance">1.000</div>
+    </div>
+    <div class="feature-item">
+      <div><span class="feature-name">Age at first arrest</span><span class="feature-chosen chosen-no">not chosen</span></div>
+      <div class="feature-bar-track"><div class="feature-bar-fill" data-width="28"></div></div>
+      <div class="feature-importance">0.278</div>
+    </div>
+    <div class="feature-item">
+      <div><span class="feature-name">Age at release</span><span class="feature-chosen chosen-no">not chosen</span></div>
+      <div class="feature-bar-track"><div class="feature-bar-fill" data-width="25"></div></div>
+      <div class="feature-importance">0.247</div>
+    </div>
+    <div class="feature-item">
+      <div><span class="feature-name">Neighborhood poverty</span><span class="feature-chosen chosen-no">not chosen</span></div>
+      <div class="feature-bar-track"><div class="feature-bar-fill" data-width="14"></div></div>
+      <div class="feature-importance">0.141</div>
+    </div>
+    <div class="feature-item">
+      <div><span class="feature-name">Parental incarceration</span><span class="feature-chosen chosen-no">not chosen</span></div>
+      <div class="feature-bar-track"><div class="feature-bar-fill" data-width="9"></div></div>
+      <div class="feature-importance">0.086</div>
+    </div>
+    <div class="feature-item">
+      <div><span class="feature-name">Unemployment at release</span><span class="feature-chosen chosen-maybe">partially chosen</span></div>
+      <div class="feature-bar-track"><div class="feature-bar-fill medium" data-width="4"></div></div>
+      <div class="feature-importance">0.044</div>
+    </div>
+    <div class="feature-item">
+      <div><span class="feature-name">Housing instability</span><span class="feature-chosen chosen-maybe">partially chosen</span></div>
+      <div class="feature-bar-track"><div class="feature-bar-fill medium" data-width="4"></div></div>
+      <div class="feature-importance">0.043</div>
+    </div>
+    <div class="feature-item">
+      <div><span class="feature-name">Lacked high school diploma</span><span class="feature-chosen chosen-maybe">partially chosen</span></div>
+      <div class="feature-bar-track"><div class="feature-bar-fill medium" data-width="4"></div></div>
+      <div class="feature-importance">0.038</div>
+    </div>
+    <div class="feature-item">
+      <div><span class="feature-name">Race</span><span class="feature-chosen chosen-no">not chosen</span></div>
+      <div class="feature-bar-track"><div class="feature-bar-fill" data-width="1"></div></div>
+      <div class="feature-importance">0.004</div>
+    </div>
+  </div>
+
+  <p style="font-family: var(--mono); font-size: 0.7rem; color: var(--gray); margin-top: 1rem;">
+    METHODOLOGY: Ensemble importance = mean of normalized coefficients across logistic regression, random forest (200 trees), and gradient boosting (200 estimators). N=25,835. 5-fold cross-validation. Distributions calibrated to NIJ Recidivism Challenge (2012) + BJS Survey of Prison Inmates (2016).
+  </p>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SECTION 4: MODEL ACCURACY
+══════════════════════════════════════════════ -->
+<div class="section reveal">
+  <div class="section-number">04 — The Model</div>
+  <h2>How predictable is "choice"?</h2>
+
+  <p class="lead">Three models — logistic regression, random forest, and gradient boosting — were trained using only unchosen variables. All three converge on AUC-ROC around <strong>0.70</strong>, using only information that existed before any decision was made.</p>
+
+  <div class="accuracy-visual" id="accuracy-visual">
+    <div class="accuracy-label">AUC-ROC — predicting 3-year rearrest (5-fold cross-validation, N=25,835)</div>
+    <div style="display:grid; gap: 1rem; width:100%;">
+      <div>
+        <div style="font-family:var(--mono); font-size:0.7rem; color:var(--gray); margin-bottom:0.4rem;">Unchosen variables only &nbsp;<span style="color:var(--red);">AUC = 0.694</span></div>
+        <div class="accuracy-bar-outer">
+          <div class="accuracy-bar-inner" id="accuracy-bar" data-width="69.4" style="background:var(--red);">
+            <span>0.694</span>
+          </div>
+          <span class="accuracy-remainder">vs. 0.500 random</span>
+        </div>
+      </div>
+      <div>
+        <div style="font-family:var(--mono); font-size:0.7rem; color:var(--gray); margin-bottom:0.4rem;">All variables (incl. partially chosen) &nbsp;<span style="color:var(--blue);">AUC = 0.706</span></div>
+        <div class="accuracy-bar-outer">
+          <div class="accuracy-bar-inner" id="accuracy-bar-2" data-width="70.6" style="background:var(--blue); width:0%;">
+            <span>0.706</span>
+          </div>
+          <span class="accuracy-remainder">+0.012 lift</span>
+        </div>
+      </div>
+    </div>
+    <div class="accuracy-label" style="margin-top:0.5rem;">Adding "partially chosen" variables (employment, education, housing) improves prediction by just 0.012 AUC. The unchosen variables carry 98% of the signal.</div>
+  </div>
+
+  <p>The critical insight isn't the raw AUC. It's the gap — or rather the lack of one — between the unchosen-only model and the full model. The "partially chosen" variables (things a person has <em>some</em> agency over, like staying in school or finding work) add almost nothing once you already know their neighborhood, family history, and age at first arrest.</p>
+
+  <div class="chart-wrap">
+    <div class="chart-title">Actual recidivism rate by neighborhood poverty quartile (model output, N=25,835)</div>
+    <canvas id="povertyChart" height="200"></canvas>
+  </div>
+
+  <div class="pullquote">
+    <p>If someone's neighborhood, family history, and age at first contact with police can predict their future behavior at 70% accuracy — what exactly is free will contributing to the remaining 30%?</p>
+    <cite>— THE CENTRAL QUESTION OF THIS PROJECT</cite>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SECTION 5: PHILOSOPHY
+══════════════════════════════════════════════ -->
+<div class="section-dark reveal" style="max-width:100%;">
+  <div class="section" style="padding-top:0; padding-bottom:0;">
+    <div class="section-number">05 — The Philosophy</div>
+    <h2>Three answers to an uncomfortable question</h2>
+    <p class="lead">Philosophers have argued for centuries about whether determinism and moral responsibility can coexist. The data gives this debate new teeth.</p>
+
+    <div class="philosophy-grid">
+      <div class="philosophy-card kant">
+        <div class="phil-thinker">Kant — Hard Retributivism</div>
+        <div class="phil-position">"Punishment is deserved because the rational agent chose freely."</div>
+        <div class="phil-detail">Kant's framework requires that punishment be proportional to the wrong freely chosen. Circumstances are irrelevant — the moral law is accessible to all rational beings regardless of situation.</div>
+        <div class="phil-verdict">VERDICT ON THE DATA → Kant must claim the 70% prediction rate is coincidence, not causation. The agent was still free in every instance. Hard to sustain.</div>
+      </div>
+      <div class="philosophy-card strawson">
+        <div class="phil-thinker">Strawson — Reactive Attitudes</div>
+        <div class="phil-position">"Responsibility is about relationships and attitudes, not metaphysical freedom."</div>
+        <div class="phil-detail">P.F. Strawson argued that holding someone responsible is a social practice — about resentment, gratitude, and moral engagement — not about whether the universe is deterministic.</div>
+        <div class="phil-verdict">VERDICT ON THE DATA → Strawson's view survives determinism but struggles with systematic disadvantage. Can we justifiably resent someone for what their circumstances made nearly inevitable?</div>
+      </div>
+      <div class="philosophy-card dennett">
+        <div class="phil-thinker">Dennett — Compatibilism</div>
+        <div class="phil-position">"Freedom worth wanting is real even in a deterministic world."</div>
+        <div class="phil-detail">Daniel Dennett's compatibilism holds that what matters is whether behavior responds to reasons — not whether it was "uncaused." A person who acts on deliberation is free enough to be responsible.</div>
+        <div class="phil-verdict">VERDICT ON THE DATA → Most plausible — but demands we ask: if circumstances systematically undermine reason-responsiveness, at what point does responsibility transfer to the system that creates those circumstances?</div>
+      </div>
+    </div>
+
+    <p>The most honest answer sits between these views: people are neither fully free nor fully determined. But the data suggests we've been distributing moral responsibility far too heavily onto individuals and far too lightly onto the structural conditions that constrain them.</p>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SECTION 6: POLICY
+══════════════════════════════════════════════ -->
+<div class="section reveal">
+  <div class="section-number">06 — The Policy Consequence</div>
+  <h2>What changes if we're right?</h2>
+  <p class="lead">If behavior is substantially shaped by unchosen circumstances, then a justice system built primarily on punishment and deterrence is targeting the wrong variable. The natural experiment: countries that treat crime as a structural problem.</p>
+
+  <div class="country-compare">
+    <div class="country-card">
+      <div class="country-name">United States</div>
+      <div class="country-rate">68%</div>
+      <div class="country-desc">3-year rearrest rate. Incarceration-first model. Minimal rehabilitation infrastructure. Heavy reliance on solitary confinement, mandatory minimums, and collateral consequences (loss of housing eligibility, voting rights, employment access).</div>
+      <div class="country-note">$39,000 avg. annual cost per incarcerated person / $80B+ total annual corrections spend</div>
+    </div>
+    <div class="country-card highlight-card">
+      <div class="country-name">Norway</div>
+      <div class="country-rate">20%</div>
+      <div class="country-desc">2-year reoffense rate. Rehabilitation-first model. Prisons structured around education, vocational training, mental health treatment. Sentences focused on preparing people to reintegrate — not on punishment as an end in itself.</div>
+      <div class="country-note">$93,000 avg. annual cost per incarcerated person — but total corrections costs 60% lower due to far fewer incarcerations</div>
+    </div>
+  </div>
+
+  <p>The typical objection: Norway is smaller, more homogeneous, wealthier. True. But the gap is so dramatic — 68% vs. 20% — that cultural differences can't account for all of it. And the underlying logic tracks with what the data shows: address the structural conditions that predict reoffending, and reoffending decreases.</p>
+
+  <div class="chart-wrap">
+    <div class="chart-title">Recidivism rates by country — 2-year reoffense (selected nations)</div>
+    <canvas id="countryChart" height="220"></canvas>
+  </div>
+
+  <table class="compare-table reveal">
+    <thead>
+      <tr>
+        <th>Intervention</th>
+        <th>Addresses "Choice"?</th>
+        <th>Addresses Predictors?</th>
+        <th>Evidence on Recidivism</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Longer sentences</td>
+        <td>Yes — increases cost of choice</td>
+        <td>No</td>
+        <td class="highlight">Little to no effect (Nagin, 2013)</td>
+      </tr>
+      <tr>
+        <td>Employment programs</td>
+        <td>No</td>
+        <td>Yes — addresses economic predictor</td>
+        <td class="highlight">↓ 20–30% in multiple studies</td>
+      </tr>
+      <tr>
+        <td>Education in prison</td>
+        <td>No</td>
+        <td>Yes — addresses education predictor</td>
+        <td class="highlight">↓ 43% rearrest (RAND, 2014)</td>
+      </tr>
+      <tr>
+        <td>Housing support post-release</td>
+        <td>No</td>
+        <td>Yes — addresses housing predictor</td>
+        <td class="highlight">↓ 30–50% in stable housing programs</td>
+      </tr>
+      <tr>
+        <td>Substance treatment</td>
+        <td>No</td>
+        <td>Yes — addresses SUD predictor</td>
+        <td class="highlight">↓ 15–25% in treatment vs. incarceration</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p>The pattern is consistent: interventions that treat recidivism as a personal failing (longer sentences, harsher conditions) show weak evidence. Interventions that address the structural predictors the model identifies show strong evidence. This isn't a coincidence.</p>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     CLOSING
+══════════════════════════════════════════════ -->
+<section id="closing">
+  <div class="closing-inner reveal">
+    <div class="section-number" style="color: rgba(245,240,232,0.3);">07 — The Question</div>
+    <h2>We punish people for outcomes we could have predicted <em>from their birth certificate.</em></h2>
+    <div class="divider"></div>
+    <p>This data doesn't prove that free will doesn't exist. It doesn't resolve the compatibilism debate. What it does is shift the burden of proof.</p>
+    <p>If the strongest predictors of reoffending are things a person never chose — their neighborhood, their family, their age when the system first got its hands on them — then a justice system that responds primarily with punishment is making a philosophical bet: that individual agency overpowers structural circumstance at the moment of decision.</p>
+    <p>The data suggests that bet is losing. And we're all paying the cost.</p>
+    <p style="margin-top: 2rem; font-family: var(--mono); font-size: 0.8rem; color: rgba(245,240,232,0.3); max-width: 100%;">Is that justice — or just habit?</p>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════
+     FOOTER
+══════════════════════════════════════════════ -->
+<footer>
+  <div>
+    <div class="footer-title">Chosen?</div>
+    <div class="footer-meta">
+      A data portfolio project<br>
+      Exploring free will, determinism,<br>
+      and the structural roots of recidivism
+    </div>
+  </div>
+  <div class="footer-sources">
+    <h4>Data Sources</h4>
+    <ul>
+      <li>NIJ Recidivism Challenge Dataset (2012)</li>
+      <li>Bureau of Justice Statistics — Multi-State Recidivism Study (2018)</li>
+      <li>Vera Institute of Justice — Cost of Corrections (2022)</li>
+      <li>RAND Corporation — Education and Recidivism (2014)</li>
+      <li>Pew Charitable Trusts — Prison Releases (2023)</li>
+      <li>ICPS World Prison Brief — International Comparisons</li>
+      <li>Nagin, D. (2013) — Deterrence in the 21st Century</li>
+    </ul>
+  </div>
+  <div class="footer-sources">
+    <h4>Philosophical References</h4>
+    <ul>
+      <li>Kant — Groundwork for the Metaphysics of Morals (1785)</li>
+      <li>P.F. Strawson — Freedom and Resentment (1962)</li>
+      <li>Daniel Dennett — Elbow Room (1984)</li>
+      <li>John Rawls — A Theory of Justice (1971)</li>
+      <li>Michael Sandel — Justice: What's the Right Thing to Do? (2009)</li>
+    </ul>
+  </div>
+</footer>
+
+<script>
+// ── PROGRESS BAR ──────────────────────────────
+window.addEventListener('scroll', () => {
+  const scrollTop = window.scrollY;
+  const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+  const progress = (scrollTop / docHeight) * 100;
+  document.getElementById('progress-bar').style.width = progress + '%';
+});
+
+// ── INTERSECTION OBSERVER FOR REVEALS ─────────
+const revealEls = document.querySelectorAll('.reveal');
+
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+    }
+  });
+}, { threshold: 0.1 });
+
+revealEls.forEach(el => observer.observe(el));
+
+// Feature bars
+const featureObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      const items = entry.target.querySelectorAll('.feature-item');
+      items.forEach((item, i) => {
+        setTimeout(() => {
+          item.classList.add('visible');
+          const bar = item.querySelector('.feature-bar-fill');
+          if (bar) bar.style.width = bar.dataset.width + '%';
+        }, i * 100);
+      });
+    }
+  });
+}, { threshold: 0.1 });
+
+const featureList = document.getElementById('feature-list');
+if (featureList) featureObserver.observe(featureList);
+
+// Accuracy bars
+const accuracyObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      setTimeout(() => {
+        const bar = document.getElementById('accuracy-bar');
+        if (bar) bar.style.width = bar.dataset.width + '%';
+      }, 300);
+      setTimeout(() => {
+        const bar2 = document.getElementById('accuracy-bar-2');
+        if (bar2) bar2.style.width = bar2.dataset.width + '%';
+      }, 700);
+    }
+  });
+}, { threshold: 0.3 });
+
+const accVisual = document.getElementById('accuracy-visual');
+if (accVisual) accuracyObserver.observe(accVisual);
+
+// ── CHART 1: POVERTY QUARTILE ─────────────────
+const povertyCtx = document.getElementById('povertyChart').getContext('2d');
+new Chart(povertyCtx, {
+  type: 'bar',
+  data: {
+    labels: ['Q1 — Lowest poverty\n(n=3,255)', 'Q2 — Low-moderate\n(n=5,729)', 'Q3 — Moderate-high\n(n=7,697)', 'Q4 — Highest poverty\n(n=9,154)'],
+    datasets: [{
+      label: '3-year rearrest rate (%)',
+      data: [26.7, 27.1, 36.4, 37.4],
+      backgroundColor: ['#e8b4ae', '#d4827a', '#c0392b', '#8b1a10'],
+      borderWidth: 0,
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label: ctx => `${ctx.parsed.y}% rearrest rate`
+        }
+      }
+    },
+    scales: {
+      x: {
+        grid: { display: false },
+        ticks: { font: { family: 'IBM Plex Mono', size: 10 }, color: '#6b6b6b' }
+      },
+      y: {
+        beginAtZero: true,
+        max: 55,
+        ticks: {
+          font: { family: 'IBM Plex Mono', size: 10 },
+          color: '#6b6b6b',
+          callback: v => v + '%'
+        },
+        grid: { color: '#e8e3d8' }
+      }
+    }
+  }
+});
+
+// ── CHART 2: COUNTRY COMPARISON ────────────────
+const countryCtx = document.getElementById('countryChart').getContext('2d');
+new Chart(countryCtx, {
+  type: 'bar',
+  data: {
+    labels: ['Norway', 'Denmark', 'Finland', 'Germany', 'Canada', 'Australia', 'United States'],
+    datasets: [{
+      label: '2-year reoffense rate (%)',
+      data: [20, 27, 33, 47, 44, 45, 56],
+      backgroundColor: (ctx) => ctx.dataIndex === 6 ? '#c0392b' : '#a8c0d6',
+      borderWidth: 0,
+    }]
+  },
+  options: {
+    indexAxis: 'y',
+    responsive: true,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label: ctx => `${ctx.parsed.x}% 2-year reoffense rate`
+        }
+      }
+    },
+    scales: {
+      x: {
+        beginAtZero: true,
+        max: 75,
+        ticks: {
+          font: { family: 'IBM Plex Mono', size: 10 },
+          color: '#6b6b6b',
+          callback: v => v + '%'
+        },
+        grid: { color: '#e8e3d8' }
+      },
+      y: {
+        grid: { display: false },
+        ticks: { font: { family: 'IBM Plex Mono', size: 11 }, color: '#6b6b6b' }
+      }
+    }
+  }
+});
+</script>
+</body>
+</html>

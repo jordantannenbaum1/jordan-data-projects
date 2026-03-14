@@ -49,11 +49,14 @@
     .dagcol{flex:1}
     .dagcollbl{font-family:var(--mono);font-size:0.56rem;letter-spacing:0.12em;text-transform:uppercase;margin-bottom:0.6rem;padding-bottom:0.3rem;border-bottom:1px solid var(--border)}
     .c1lbl{color:#6B9E78} .c2lbl{color:#5B8DB8} .c3lbl{color:#B8955B} .c4lbl{color:var(--a)}
-    .dn{background:var(--bg);border:1px solid var(--border);padding:0.4rem 0.65rem;margin-bottom:0.35rem;font-family:var(--mono);font-size:0.6rem;color:var(--mid);cursor:default;transition:all 0.2s}
+    .dn{background:var(--bg);border:1px solid var(--border);padding:0.4rem 0.65rem;margin-bottom:0.35rem;font-family:var(--mono);font-size:0.6rem;color:var(--mid);cursor:pointer;transition:all 0.2s;user-select:none}
     .dn:hover{border-color:var(--mid);color:var(--text)}
     .dn.s{border-left:2px solid #6B9E78} .dn.st{border-left:2px solid #5B8DB8} .dn.i{border-left:2px solid #B8955B} .dn.m{border-left:2px solid var(--a)}
+    .dn.active{border-color:var(--text);color:var(--text);background:#1c1c1c}
+    .dn.s.active{border-left-color:#6B9E78} .dn.st.active{border-left-color:#5B8DB8} .dn.i.active{border-left-color:#B8955B} .dn.m.active{border-left-color:var(--a)}
     .dnsub{font-size:0.52rem;color:var(--muted);margin-top:0.12rem}
     .dagarr{display:flex;align-items:center;padding-top:1.2rem;color:var(--border);font-size:0.9rem}
+    .sql-fname{font-family:var(--mono);font-size:0.56rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);padding:0.45rem 1.4rem;background:#0A0A0A;border:1px solid var(--border);border-bottom:none}
     .code{background:#111;border:1px solid var(--border);overflow-x:auto;margin-bottom:1rem}
     .code pre{font-family:var(--mono);font-size:0.7rem;line-height:1.75;color:#888;padding:1.1rem 1.4rem;white-space:pre}
     .kw{color:#E85D26} .fn{color:#7BB8D4} .str{color:#7DAD6F} .cm{color:#444} .vr{color:#C4A96A} .nm{color:#B07FD4}
@@ -128,32 +131,32 @@
         </div>
 
         <div class="dagwrap">
-          <div class="daglbl">// dbt model lineage</div>
+          <div class="daglbl">// dbt model lineage — click any node to view SQL</div>
           <div class="dagflow">
             <div class="dagcol">
               <div class="dagcollbl c1lbl">Sources</div>
-              <div class="dn s">fed_dfa</div>
-              <div class="dn s">scf_microdata</div>
-              <div class="dn s">irs_soi</div>
+              <div class="dn s" data-model="fed_dfa">fed_dfa</div>
+              <div class="dn s" data-model="scf_microdata">scf_microdata</div>
+              <div class="dn s" data-model="irs_soi">irs_soi</div>
             </div>
             <div class="dagarr">→</div>
             <div class="dagcol">
               <div class="dagcollbl c2lbl">Staging</div>
-              <div class="dn st">stg_dfa_wealth</div>
-              <div class="dn st">stg_scf_respondents</div>
-              <div class="dn st">stg_irs_soi</div>
+              <div class="dn st" data-model="stg_dfa_wealth">stg_dfa_wealth</div>
+              <div class="dn st" data-model="stg_scf_respondents">stg_scf_respondents</div>
+              <div class="dn st" data-model="stg_irs_soi">stg_irs_soi</div>
             </div>
             <div class="dagarr">→</div>
             <div class="dagcol">
               <div class="dagcollbl c3lbl">Int</div>
-              <div class="dn i">int_wealth_shares</div>
-              <div class="dn i">int_race_gender_nw</div>
+              <div class="dn i" data-model="int_wealth_shares">int_wealth_shares</div>
+              <div class="dn i" data-model="int_race_gender_nw">int_race_gender_nw</div>
             </div>
             <div class="dagarr">→</div>
             <div class="dagcol">
               <div class="dagcollbl c4lbl">Marts</div>
-              <div class="dn m">fct_wealth_dist</div>
-              <div class="dn m">rpt_wealth_by_demo</div>
+              <div class="dn m" data-model="fct_wealth_dist">fct_wealth_dist</div>
+              <div class="dn m" data-model="rpt_wealth_by_demo">rpt_wealth_by_demo</div>
             </div>
           </div>
         </div>
@@ -177,27 +180,11 @@
           <canvas id="wealthRaceChart"></canvas>
         </div>
 
-        <div class="code">
-          <pre><span class="cm">-- int_wealth_shares.sql</span>
-<span class="kw">with</span> dfa <span class="kw">as</span> (
-    <span class="kw">select</span> * <span class="kw">from</span> {{ <span class="fn">ref</span>(<span class="str">'stg_dfa_wealth'</span>) }}
-),
-totals <span class="kw">as</span> (
-    <span class="kw">select</span>
-        quarter,
-        <span class="fn">sum</span>(net_worth_billions) <span class="kw">as</span> total_wealth,
-        <span class="fn">sum</span>(<span class="kw">case when</span> pctile_group = <span class="str">'top_0_1'</span>
-            <span class="kw">then</span> net_worth_billions <span class="kw">end</span>) <span class="kw">as</span> top_01_wealth,
-        <span class="fn">sum</span>(<span class="kw">case when</span> pctile_group = <span class="str">'bottom_50'</span>
-            <span class="kw">then</span> net_worth_billions <span class="kw">end</span>) <span class="kw">as</span> bottom_50_wealth
-    <span class="kw">from</span> dfa <span class="kw">group by</span> 1
-)
-<span class="kw">select</span>
-    quarter,
-    <span class="fn">round</span>(top_01_wealth    * <span class="nm">100.0</span> / total_wealth, 2) <span class="kw">as</span> top_01_pct,
-    <span class="fn">round</span>(bottom_50_wealth * <span class="nm">100.0</span> / total_wealth, 2) <span class="kw">as</span> bottom_50_pct,
-    <span class="fn">round</span>(top_01_wealth / <span class="fn">nullif</span>(bottom_50_wealth, <span class="nm">0</span>), 1) <span class="kw">as</span> ratio
-<span class="kw">from</span> totals <span class="kw">order by</span> 1</pre>
+        <div class="sql-fname" id="sql-fname">// select a model from the lineage to view its SQL</div>
+        <div class="code" id="sql-panel">
+          <pre id="sql-pre"><span class="cm">-- Click any node in the dbt lineage diagram to view its SQL.
+-- Sources show schema definitions; staging, intermediate,
+-- and mart models show the full dbt SQL file.</span></pre>
         </div>
       </div>
 
@@ -242,6 +229,320 @@ totals <span class="kw">as</span> (
       datasets: [{ data: [189, 141, 98, 71, 38, 24, 26, 0.3], backgroundColor: ['#4A9E8E77','#4A9E8E44','#C4913A77','#C4913A44','#A78BCA77','#A78BCA44','#E85D2677','#E85D2622'], borderColor: ['#4A9E8E','#4A9E8E','#C4913A','#C4913A','#A78BCA','#A78BCA','#E85D26','#E85D26'], borderWidth: 1.5 }]
     },
     options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false }, tooltip: { ...T, callbacks: { label: c => ' $' + c.raw + 'k median net worth' } } }, scales: { x: { grid: G, border: { display: false }, ticks: { callback: v => '$' + v + 'k' } }, y: { grid: { display: false }, border: { display: false } } } }
+  });
+
+  // ── SQL model content ──────────────────────────────────────────────────────
+  const SQL_MODELS = {
+    fed_dfa: {
+      fname: 'sources.yml',
+      sql: `-- source: fed.distributional_financial_accounts
+-- Federal Reserve Distributional Financial Accounts (DFA).
+-- Quarterly wealth distribution estimates since 1989.
+-- Published as part of the Financial Accounts of the United States.
+--
+-- Key fields:
+--   quarter          -- YYYY-QN format (e.g. 2023-Q3)
+--   pctile_group     -- wealth percentile bucket (top_0_1, top_1, etc.)
+--   net_worth_billions -- total net worth in billions of dollars
+--   asset_class      -- real estate, equities, pension, etc.`
+    },
+    scf_microdata: {
+      fname: 'sources.yml',
+      sql: `-- source: fed.survey_of_consumer_finances
+-- Survey of Consumer Finances triennial microdata.
+-- Oversamples wealthy households for distributional accuracy.
+-- Uses multiple imputation (5 implicates per respondent).
+--
+-- Key fields:
+--   y1          -- respondent identifier (masked)
+--   wgt         -- final weight (use for all aggregations)
+--   racecl4     -- race category (4-group classification)
+--   hhsex       -- sex of household head
+--   networth    -- total net worth (dollars)
+--   income      -- total family income (dollars)
+--   year        -- survey year (1989, 1992, ..., 2022)`
+    },
+    irs_soi: {
+      fname: 'sources.yml',
+      sql: `-- source: irs.statistics_of_income
+-- IRS Statistics of Income top-income data.
+-- Annual income and tax data for top earners.
+--
+-- Key fields:
+--   agi_stub       -- adjusted gross income size class
+--   num_returns    -- number of returns in class
+--   agi_amount     -- total AGI in thousands
+--   capital_gains  -- net capital gains in thousands
+--   tax_year       -- tax year`
+    },
+    stg_dfa_wealth: {
+      fname: 'stg_dfa_wealth.sql',
+      sql: `{{ config(materialized='view', tags=['wealth', 'staging']) }}
+
+WITH raw_dfa AS (
+    SELECT
+        quarter,
+        pctile_group,
+        net_worth_billions,
+        asset_class,
+    FROM {{ source('fed', 'distributional_financial_accounts') }}
+    WHERE quarter >= '1989-Q1'
+)
+
+SELECT
+    quarter,
+    CAST(LEFT(quarter, 4) AS INTEGER)   AS year,
+    pctile_group,
+    net_worth_billions,
+    asset_class,
+FROM raw_dfa
+WHERE net_worth_billions IS NOT NULL`
+    },
+    stg_scf_respondents: {
+      fname: 'stg_scf_respondents.sql',
+      sql: `{{ config(materialized='view', tags=['wealth', 'staging']) }}
+
+WITH raw_scf AS (
+    SELECT
+        y1          AS respondent_id,
+        wgt         AS survey_weight,
+        racecl4     AS race_code,
+        hhsex       AS sex_code,
+        networth    AS net_worth,
+        income      AS household_income,
+        year        AS survey_year,
+    FROM {{ source('fed', 'survey_of_consumer_finances') }}
+)
+
+SELECT
+    respondent_id,
+    survey_weight,
+    CASE race_code
+        WHEN 1 THEN 'White'
+        WHEN 2 THEN 'Black'
+        WHEN 3 THEN 'Hispanic'
+        WHEN 4 THEN 'Other'
+    END                               AS race_category,
+    CASE sex_code WHEN 1 THEN 'Male' ELSE 'Female' END AS gender,
+    net_worth,
+    household_income,
+    survey_year,
+FROM raw_scf
+WHERE net_worth IS NOT NULL`
+    },
+    stg_irs_soi: {
+      fname: 'stg_irs_soi.sql',
+      sql: `{{ config(materialized='view', tags=['wealth', 'staging']) }}
+
+WITH raw_soi AS (
+    SELECT
+        agi_stub,
+        num_returns,
+        agi_amount,
+        capital_gains,
+        tax_year,
+    FROM {{ source('irs', 'statistics_of_income') }}
+    WHERE tax_year >= 2000
+)
+
+SELECT
+    agi_stub,
+    tax_year,
+    num_returns,
+    ROUND(agi_amount / 1000.0, 1)       AS agi_millions,
+    ROUND(capital_gains / 1000.0, 1)    AS capital_gains_millions,
+    ROUND(
+        capital_gains * 100.0
+            / NULLIF(agi_amount, 0),
+        1
+    )                                   AS capital_gains_share_pct,
+FROM raw_soi`
+    },
+    int_wealth_shares: {
+      fname: 'int_wealth_shares.sql',
+      sql: `{{ config(materialized='table', tags=['wealth', 'intermediate']) }}
+
+WITH dfa AS (
+    SELECT
+        quarter,
+        year,
+        pctile_group,
+        net_worth_billions,
+    FROM {{ ref('stg_dfa_wealth') }}
+),
+
+quarterly_totals AS (
+    SELECT
+        quarter,
+        year,
+        SUM(net_worth_billions)                        AS total_wealth,
+        SUM(CASE WHEN pctile_group = 'top_0_1'
+            THEN net_worth_billions END)               AS top_01_wealth,
+        SUM(CASE WHEN pctile_group = 'bottom_50'
+            THEN net_worth_billions END)               AS bottom_50_wealth,
+    FROM dfa
+    GROUP BY quarter, year
+)
+
+SELECT
+    quarter,
+    year,
+    ROUND(top_01_wealth * 100.0    / total_wealth, 2) AS top_01_pct,
+    ROUND(bottom_50_wealth * 100.0 / total_wealth, 2) AS bottom_50_pct,
+    ROUND(
+        top_01_wealth / NULLIF(bottom_50_wealth, 0),
+        1
+    )                                                  AS ratio,
+FROM quarterly_totals
+ORDER BY quarter`
+    },
+    int_race_gender_nw: {
+      fname: 'int_race_gender_nw.sql',
+      sql: `{{ config(materialized='table', tags=['wealth', 'intermediate']) }}
+
+WITH scf_respondents AS (
+    SELECT
+        respondent_id,
+        survey_weight,
+        race_category,
+        gender,
+        net_worth,
+        household_income,
+        survey_year,
+    FROM {{ ref('stg_scf_respondents') }}
+),
+
+demographic_groups AS (
+    SELECT
+        race_category,
+        gender,
+        survey_year,
+        COUNT(respondent_id)                           AS respondent_count,
+        SUM(survey_weight)                             AS weighted_population,
+        MEDIAN(net_worth)                              AS median_net_worth,
+        AVG(net_worth)                                 AS mean_net_worth,
+        PERCENTILE_CONT(0.25) WITHIN GROUP
+            (ORDER BY net_worth)                       AS p25_net_worth,
+        PERCENTILE_CONT(0.75) WITHIN GROUP
+            (ORDER BY net_worth)                       AS p75_net_worth,
+    FROM scf_respondents
+    GROUP BY race_category, gender, survey_year
+)
+
+SELECT
+    race_category,
+    gender,
+    survey_year,
+    respondent_count,
+    weighted_population,
+    ROUND(median_net_worth / 1000, 1)    AS median_net_worth_thousands,
+    ROUND(mean_net_worth / 1000, 1)      AS mean_net_worth_thousands,
+FROM demographic_groups`
+    },
+    fct_wealth_dist: {
+      fname: 'fct_wealth_dist.sql',
+      sql: `{{ config(materialized='table', tags=['wealth', 'mart']) }}
+
+WITH wealth_shares AS (
+    SELECT
+        quarter,
+        year,
+        top_01_pct,
+        bottom_50_pct,
+        ratio,
+    FROM {{ ref('int_wealth_shares') }}
+)
+
+SELECT
+    quarter,
+    year,
+    top_01_pct,
+    bottom_50_pct,
+    ratio,
+    top_01_pct - bottom_50_pct           AS spread_pct,
+    ROUND(
+        top_01_pct
+            - FIRST_VALUE(top_01_pct)
+                OVER (ORDER BY quarter),
+        2
+    )                                    AS top_01_change_since_1989,
+FROM wealth_shares
+ORDER BY quarter`
+    },
+    rpt_wealth_by_demo: {
+      fname: 'rpt_wealth_by_demo.sql',
+      sql: `{{ config(materialized='table', tags=['wealth', 'mart']) }}
+
+WITH race_gender_nw AS (
+    SELECT
+        race_category,
+        gender,
+        survey_year,
+        median_net_worth_thousands,
+        mean_net_worth_thousands,
+    FROM {{ ref('int_race_gender_nw') }}
+    WHERE survey_year = 2022
+),
+
+white_male_benchmark AS (
+    SELECT median_net_worth_thousands AS benchmark_nw
+    FROM race_gender_nw
+    WHERE race_category = 'White'
+      AND gender = 'Male'
+)
+
+SELECT
+    race_gender_nw.race_category,
+    race_gender_nw.gender,
+    race_gender_nw.median_net_worth_thousands,
+    race_gender_nw.mean_net_worth_thousands,
+    ROUND(
+        race_gender_nw.median_net_worth_thousands
+            / NULLIF(white_male_benchmark.benchmark_nw, 0),
+        3
+    )                                          AS ratio_to_white_male,
+FROM race_gender_nw
+CROSS JOIN white_male_benchmark
+ORDER BY race_gender_nw.median_net_worth_thousands DESC`
+    }
+  };
+
+  // ── Syntax highlighter ─────────────────────────────────────────────────────
+  const KW = /\b(SELECT|FROM|WHERE|WITH|AS|AND|OR|NOT|IN|IS|NULL|TRUE|FALSE|LEFT|RIGHT|INNER|OUTER|JOIN|ON|USING|GROUP|ORDER|HAVING|CASE|WHEN|THEN|ELSE|END|DISTINCT|LIMIT|ROUND|COUNT|SUM|AVG|MAX|MIN|NULLIF|COALESCE|MEDIAN|BY|ALL|UNION|OVER|PARTITION|FIRST_VALUE|EXTRACT|TRUNC|CAST|CROSS|WITHIN|PERCENTILE_CONT|PERCENTILE_DISC)\b/g;
+
+  function hl(raw) {
+    return raw
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .split('\n')
+      .map(line => {
+        if (/^\s*--/.test(line)) return '<span class="cm">' + line + '</span>';
+        const ci = line.indexOf('--');
+        const body = ci >= 0 ? line.slice(0, ci) : line;
+        const tail = ci >= 0 ? '<span class="cm">' + line.slice(ci) + '</span>' : '';
+        const out = body
+          .replace(/(\{\{[^}]+\}\})/g, '<span class="fn">$1</span>')
+          .replace(/'([^']*)'/g, "<span class=\"str\">'$1'</span>")
+          .replace(KW, '<span class="kw">$1</span>')
+          .replace(/\b(\d+(?:\.\d+)?)\b/g, '<span class="nm">$1</span>');
+        return out + tail;
+      })
+      .join('\n');
+  }
+
+  // ── Lineage click handler ──────────────────────────────────────────────────
+  const nodes    = document.querySelectorAll('.dn[data-model]');
+  const sqlFname = document.getElementById('sql-fname');
+  const sqlPre   = document.getElementById('sql-pre');
+
+  nodes.forEach(node => {
+    node.addEventListener('click', () => {
+      nodes.forEach(n => n.classList.remove('active'));
+      node.classList.add('active');
+      const entry = SQL_MODELS[node.dataset.model];
+      if (!entry) return;
+      sqlFname.textContent = '// ' + entry.fname;
+      sqlPre.innerHTML = hl(entry.sql);
+    });
   });
 </script>
 </body>

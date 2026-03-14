@@ -49,11 +49,14 @@
     .dagcol{flex:1}
     .dagcollbl{font-family:var(--mono);font-size:0.56rem;letter-spacing:0.12em;text-transform:uppercase;margin-bottom:0.6rem;padding-bottom:0.3rem;border-bottom:1px solid var(--border)}
     .c1lbl{color:#6B9E78} .c2lbl{color:#5B8DB8} .c3lbl{color:#B8955B} .c4lbl{color:var(--a)}
-    .dn{background:var(--bg);border:1px solid var(--border);padding:0.4rem 0.65rem;margin-bottom:0.35rem;font-family:var(--mono);font-size:0.6rem;color:var(--mid);cursor:default;transition:all 0.2s}
+    .dn{background:var(--bg);border:1px solid var(--border);padding:0.4rem 0.65rem;margin-bottom:0.35rem;font-family:var(--mono);font-size:0.6rem;color:var(--mid);cursor:pointer;transition:all 0.2s;user-select:none}
     .dn:hover{border-color:var(--mid);color:var(--text)}
     .dn.s{border-left:2px solid #6B9E78} .dn.st{border-left:2px solid #5B8DB8} .dn.i{border-left:2px solid #B8955B} .dn.m{border-left:2px solid var(--a)}
+    .dn.active{border-color:var(--text);color:var(--text);background:#1c1c1c}
+    .dn.s.active{border-left-color:#6B9E78} .dn.st.active{border-left-color:#5B8DB8} .dn.i.active{border-left-color:#B8955B} .dn.m.active{border-left-color:var(--a)}
     .dnsub{font-size:0.52rem;color:var(--muted);margin-top:0.12rem}
     .dagarr{display:flex;align-items:center;padding-top:1.2rem;color:var(--border);font-size:0.9rem}
+    .sql-fname{font-family:var(--mono);font-size:0.56rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);padding:0.45rem 1.4rem;background:#0A0A0A;border:1px solid var(--border);border-bottom:none}
     .code{background:#111;border:1px solid var(--border);overflow-x:auto;margin-bottom:1rem}
     .code pre{font-family:var(--mono);font-size:0.7rem;line-height:1.75;color:#888;padding:1.1rem 1.4rem;white-space:pre}
     .kw{color:#E85D26} .fn{color:#7BB8D4} .str{color:#7DAD6F} .cm{color:#444} .vr{color:#C4A96A} .nm{color:#B07FD4}
@@ -129,34 +132,34 @@
         </div>
 
         <div class="dagwrap">
-          <div class="daglbl">// dbt model lineage</div>
+          <div class="daglbl">// dbt model lineage — click any node to view SQL</div>
           <div class="dagflow">
             <div class="dagcol">
               <div class="dagcollbl c1lbl">Sources</div>
-              <div class="dn s">usts_survey</div>
-              <div class="dn s">cdc_health</div>
-              <div class="dn s">tmm_homicides</div>
-              <div class="dn s">hud_pit_count</div>
+              <div class="dn s" data-model="usts_survey">usts_survey</div>
+              <div class="dn s" data-model="cdc_health">cdc_health</div>
+              <div class="dn s" data-model="tmm_homicides">tmm_homicides</div>
+              <div class="dn s" data-model="hud_pit_count">hud_pit_count</div>
             </div>
             <div class="dagarr">→</div>
             <div class="dagcol">
               <div class="dagcollbl c2lbl">Staging</div>
-              <div class="dn st">stg_usts</div>
-              <div class="dn st">stg_cdc</div>
-              <div class="dn st">stg_homicides</div>
-              <div class="dn st">stg_housing</div>
+              <div class="dn st" data-model="stg_usts">stg_usts</div>
+              <div class="dn st" data-model="stg_cdc">stg_cdc</div>
+              <div class="dn st" data-model="stg_homicides">stg_homicides</div>
+              <div class="dn st" data-model="stg_housing">stg_housing</div>
             </div>
             <div class="dagarr">→</div>
             <div class="dagcol">
               <div class="dagcollbl c3lbl">Int</div>
-              <div class="dn i">int_trans_profiles</div>
-              <div class="dn i">int_lifespan_est</div>
+              <div class="dn i" data-model="int_trans_profiles">int_trans_profiles</div>
+              <div class="dn i" data-model="int_lifespan_est">int_lifespan_est</div>
             </div>
             <div class="dagarr">→</div>
             <div class="dagcol">
               <div class="dagcollbl c4lbl">Marts</div>
-              <div class="dn m">fct_trans_outcomes</div>
-              <div class="dn m">rpt_disparity_index</div>
+              <div class="dn m" data-model="fct_trans_outcomes">fct_trans_outcomes</div>
+              <div class="dn m" data-model="rpt_disparity_index">rpt_disparity_index</div>
             </div>
           </div>
         </div>
@@ -180,26 +183,11 @@
           <canvas id="povertyChart"></canvas>
         </div>
 
-        <div class="code">
-          <pre><span class="cm">-- int_lifespan_est.sql (abridged life table method)</span>
-<span class="kw">with</span> homicide_rates <span class="kw">as</span> (
-    <span class="kw">select</span>
-        race_category, gender_identity, age_group,
-        <span class="fn">count</span>(*) <span class="kw">as</span> homicide_count,
-        pop.<span class="vr">estimated_population</span>,
-        <span class="fn">round</span>(<span class="fn">count</span>(*) * <span class="nm">100000.0</span>
-            / <span class="fn">nullif</span>(pop.<span class="vr">estimated_population</span>, <span class="nm">0</span>), 2)
-            <span class="kw">as</span> rate_per_100k
-    <span class="kw">from</span> {{ <span class="fn">ref</span>(<span class="str">'stg_homicides'</span>) }} h
-    <span class="kw">left join</span> {{ <span class="fn">ref</span>(<span class="str">'stg_population_est'</span>) }} pop
-        <span class="kw">using</span> (race_category, gender_identity, age_group)
-    <span class="kw">group by</span> 1,2,3,5
-)
-<span class="kw">select</span>
-    race_category, gender_identity, age_group,
-    rate_per_100k / <span class="nm">100000</span>            <span class="kw">as</span> mx,
-    <span class="nm">1</span> - <span class="fn">exp</span>(-rate_per_100k / <span class="nm">100000</span>) <span class="kw">as</span> qx
-<span class="kw">from</span> homicide_rates</pre>
+        <div class="sql-fname" id="sql-fname">// select a model from the lineage to view its SQL</div>
+        <div class="code" id="sql-panel">
+          <pre id="sql-pre"><span class="cm">-- Click any node in the dbt lineage diagram to view its SQL.
+-- Sources show schema definitions; staging, intermediate,
+-- and mart models show the full dbt SQL file.</span></pre>
         </div>
       </div>
 
@@ -243,6 +231,383 @@
       ]
     },
     options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, padding: 14, color: '#888' } }, tooltip: { ...T, callbacks: { label: c => ' ' + c.raw + '%' } } }, scales: { x: { grid: { display: false }, border: { display: false } }, y: { grid: G, border: { display: false }, min: 0, max: 70, ticks: { callback: v => v + '%' } } } }
+  });
+
+  // ── SQL model content ──────────────────────────────────────────────────────
+  const SQL_MODELS = {
+    usts_survey: {
+      fname: 'sources.yml',
+      sql: `-- source: usts.survey_respondents
+-- US Transgender Survey 2015 (N=27,715 respondents).
+-- The largest survey of trans people ever conducted in the US.
+-- Covers employment, income, housing, healthcare, and violence.
+--
+-- Key fields:
+--   respondent_id     -- anonymized respondent identifier
+--   gender_identity   -- trans woman, trans man, nonbinary, etc.
+--   race_ethnicity    -- race/ethnicity category
+--   annual_income     -- household income bracket
+--   employment_status -- employed, unemployed, not seeking
+--   experienced_homelessness -- ever homeless (boolean)
+--   poverty_flag      -- income below federal poverty level`
+    },
+    cdc_health: {
+      fname: 'sources.yml',
+      sql: `-- source: cdc.nchhstp_trans_health
+-- CDC National Center for HIV/AIDS, Hepatitis, STD, and TB Prevention.
+-- Surveillance data on health outcomes for transgender populations.
+--
+-- Key fields:
+--   state_code        -- two-letter state abbreviation
+--   gender_identity   -- gender identity category
+--   race_category     -- race/ethnicity
+--   hiv_diagnosis_rate -- HIV diagnoses per 100k
+--   uninsured_pct     -- percent without health insurance
+--   report_year       -- surveillance year`
+    },
+    tmm_homicides: {
+      fname: 'sources.yml',
+      sql: `-- source: tmm.murder_monitoring
+-- Trans Murder Monitoring project (Transgender Europe).
+-- Annual counts of documented trans homicides globally.
+-- US subset used here; matched to census population estimates.
+--
+-- Key fields:
+--   victim_id         -- anonymized victim identifier
+--   country_code      -- ISO 3166-1 alpha-2
+--   state_code        -- US state (where applicable)
+--   race_category     -- victim race/ethnicity
+--   gender_identity   -- victim gender identity
+--   age_group         -- age bracket at time of death
+--   report_year       -- year homicide was documented`
+    },
+    hud_pit_count: {
+      fname: 'sources.yml',
+      sql: `-- source: hud.pit_trans_estimates
+-- HUD Point-in-Time count supplemental data.
+-- Trans-identified individuals in sheltered and unsheltered counts.
+-- Collected annually in late January across 400+ CoCs.
+--
+-- Key fields:
+--   coc_number        -- Continuum of Care identifier
+--   year              -- PIT count year
+--   total_homeless    -- total homeless count
+--   trans_homeless    -- trans-identified individuals
+--   trans_pct         -- trans as share of homeless population`
+    },
+    stg_usts: {
+      fname: 'stg_usts.sql',
+      sql: `{{ config(materialized='view', tags=['trans', 'staging']) }}
+
+WITH raw_survey AS (
+    SELECT
+        respondent_id,
+        gender_identity,
+        race_ethnicity,
+        annual_income,
+        employment_status,
+        experienced_homelessness,
+        poverty_flag,
+    FROM {{ source('usts', 'survey_respondents') }}
+    WHERE respondent_id IS NOT NULL
+)
+
+SELECT
+    respondent_id,
+    CASE
+        WHEN gender_identity LIKE '%woman%'  THEN 'Trans Woman'
+        WHEN gender_identity LIKE '%man%'    THEN 'Trans Man'
+        WHEN gender_identity LIKE '%binary%' THEN 'Nonbinary'
+        ELSE 'Other Trans'
+    END                                AS gender_identity_clean,
+    race_ethnicity                     AS race_category,
+    annual_income,
+    employment_status,
+    experienced_homelessness,
+    poverty_flag,
+FROM raw_survey`
+    },
+    stg_cdc: {
+      fname: 'stg_cdc.sql',
+      sql: `{{ config(materialized='view', tags=['trans', 'staging']) }}
+
+WITH raw_cdc AS (
+    SELECT
+        state_code,
+        gender_identity,
+        race_category,
+        hiv_diagnosis_rate,
+        uninsured_pct,
+        report_year,
+    FROM {{ source('cdc', 'nchhstp_trans_health') }}
+    WHERE report_year >= 2018
+)
+
+SELECT
+    state_code,
+    gender_identity,
+    race_category,
+    ROUND(hiv_diagnosis_rate, 1) AS hiv_diagnosis_rate_per_100k,
+    ROUND(uninsured_pct, 1)      AS uninsured_pct,
+    report_year,
+FROM raw_cdc
+WHERE gender_identity IS NOT NULL`
+    },
+    stg_homicides: {
+      fname: 'stg_homicides.sql',
+      sql: `{{ config(materialized='view', tags=['trans', 'staging']) }}
+
+WITH raw_tmm AS (
+    SELECT
+        victim_id,
+        country_code,
+        state_code,
+        race_category,
+        gender_identity,
+        age_group,
+        report_year,
+    FROM {{ source('tmm', 'murder_monitoring') }}
+    WHERE country_code = 'US'
+)
+
+SELECT
+    victim_id,
+    state_code,
+    CASE
+        WHEN race_category IN ('Black', 'African American') THEN 'Black'
+        WHEN race_category IN ('Latina', 'Hispanic')        THEN 'Latina/Hispanic'
+        ELSE race_category
+    END                     AS race_category_clean,
+    gender_identity,
+    age_group,
+    report_year,
+FROM raw_tmm`
+    },
+    stg_housing: {
+      fname: 'stg_housing.sql',
+      sql: `{{ config(materialized='view', tags=['trans', 'staging']) }}
+
+WITH raw_pit AS (
+    SELECT
+        coc_number,
+        year,
+        total_homeless,
+        trans_homeless,
+        trans_pct,
+    FROM {{ source('hud', 'pit_trans_estimates') }}
+)
+
+SELECT
+    coc_number,
+    year,
+    total_homeless,
+    trans_homeless,
+    ROUND(trans_pct * 100, 2)     AS trans_pct,
+    ROUND(
+        trans_homeless * 1.0
+            / NULLIF(total_homeless, 0) * 100,
+        2
+    )                             AS trans_share_homeless_pct,
+FROM raw_pit
+WHERE year >= 2015`
+    },
+    int_trans_profiles: {
+      fname: 'int_trans_profiles.sql',
+      sql: `{{ config(materialized='table', tags=['trans', 'intermediate']) }}
+
+WITH usts_clean AS (
+    SELECT
+        respondent_id,
+        gender_identity_clean,
+        race_category,
+        annual_income,
+        employment_status,
+        experienced_homelessness,
+        poverty_flag,
+    FROM {{ ref('stg_usts') }}
+),
+
+cdc_state AS (
+    SELECT
+        state_code,
+        gender_identity,
+        race_category,
+        hiv_diagnosis_rate_per_100k,
+        uninsured_pct,
+    FROM {{ ref('stg_cdc') }}
+    WHERE report_year = 2022
+)
+
+SELECT
+    usts_clean.respondent_id,
+    usts_clean.gender_identity_clean,
+    usts_clean.race_category,
+    usts_clean.annual_income,
+    usts_clean.experienced_homelessness,
+    usts_clean.poverty_flag,
+    CASE
+        WHEN usts_clean.gender_identity_clean = 'Trans Woman'
+            AND usts_clean.race_category IN ('Black', 'Latina/Hispanic')
+            THEN TRUE
+        ELSE FALSE
+    END                                    AS is_trans_woc_flag,
+FROM usts_clean`
+    },
+    int_lifespan_est: {
+      fname: 'int_lifespan_est.sql',
+      sql: `{{ config(materialized='table', tags=['trans', 'intermediate']) }}
+
+-- Abridged life table method using homicide as excess mortality.
+-- Baseline actuarial tables by race/sex from CDC WONDER;
+-- excess mortality from Trans Murder Monitoring rates.
+
+WITH homicide_rates AS (
+    SELECT
+        stg_homicides.race_category_clean  AS race_category,
+        stg_homicides.gender_identity,
+        stg_homicides.age_group,
+        COUNT(stg_homicides.victim_id)     AS homicide_count,
+        pop_est.estimated_population,
+        ROUND(
+            COUNT(stg_homicides.victim_id) * 100000.0
+                / NULLIF(pop_est.estimated_population, 0),
+            2
+        )                                  AS rate_per_100k,
+    FROM {{ ref('stg_homicides') }}
+    LEFT JOIN {{ ref('stg_population_est') }} pop_est
+        ON stg_homicides.race_category_clean = pop_est.race_category
+        AND stg_homicides.gender_identity    = pop_est.gender_identity
+        AND stg_homicides.age_group          = pop_est.age_group
+    GROUP BY
+        stg_homicides.race_category_clean,
+        stg_homicides.gender_identity,
+        stg_homicides.age_group,
+        pop_est.estimated_population
+)
+
+SELECT
+    race_category,
+    gender_identity,
+    age_group,
+    rate_per_100k / 100000            AS mx,
+    1 - EXP(-rate_per_100k / 100000)  AS qx,
+FROM homicide_rates`
+    },
+    fct_trans_outcomes: {
+      fname: 'fct_trans_outcomes.sql',
+      sql: `{{ config(materialized='table', tags=['trans', 'mart']) }}
+
+WITH trans_profiles AS (
+    SELECT
+        respondent_id,
+        gender_identity_clean,
+        race_category,
+        annual_income,
+        experienced_homelessness,
+        poverty_flag,
+        is_trans_woc_flag,
+    FROM {{ ref('int_trans_profiles') }}
+),
+
+housing_summary AS (
+    SELECT
+        ROUND(AVG(trans_pct), 1)               AS avg_trans_pct_homeless,
+        ROUND(AVG(trans_share_homeless_pct), 1) AS avg_trans_share_pct,
+    FROM {{ ref('stg_housing') }}
+)
+
+SELECT
+    trans_profiles.gender_identity_clean,
+    trans_profiles.race_category,
+    COUNT(trans_profiles.respondent_id)  AS respondent_count,
+    ROUND(
+        AVG(CASE WHEN trans_profiles.poverty_flag THEN 1.0 ELSE 0.0 END) * 100,
+        1
+    )                                    AS poverty_rate_pct,
+    ROUND(
+        AVG(CASE WHEN trans_profiles.experienced_homelessness THEN 1.0 ELSE 0.0 END) * 100,
+        1
+    )                                    AS homelessness_rate_pct,
+FROM trans_profiles
+GROUP BY
+    trans_profiles.gender_identity_clean,
+    trans_profiles.race_category`
+    },
+    rpt_disparity_index: {
+      fname: 'rpt_disparity_index.sql',
+      sql: `{{ config(materialized='table', tags=['trans', 'mart']) }}
+
+WITH outcomes AS (
+    SELECT
+        gender_identity_clean,
+        race_category,
+        respondent_count,
+        poverty_rate_pct,
+        homelessness_rate_pct,
+    FROM {{ ref('fct_trans_outcomes') }}
+),
+
+lifespan AS (
+    SELECT
+        gender_identity,
+        race_category,
+        qx,
+    FROM {{ ref('int_lifespan_est') }}
+    WHERE age_group = '25-34'
+)
+
+SELECT
+    outcomes.gender_identity_clean,
+    outcomes.race_category,
+    outcomes.respondent_count,
+    outcomes.poverty_rate_pct,
+    outcomes.homelessness_rate_pct,
+    ROUND(
+        outcomes.poverty_rate_pct
+            + outcomes.homelessness_rate_pct,
+        1
+    )                              AS composite_disparity_score,
+FROM outcomes
+ORDER BY composite_disparity_score DESC`
+    }
+  };
+
+  // ── Syntax highlighter ─────────────────────────────────────────────────────
+  const KW = /\b(SELECT|FROM|WHERE|WITH|AS|AND|OR|NOT|IN|IS|NULL|TRUE|FALSE|LEFT|RIGHT|INNER|OUTER|JOIN|ON|USING|GROUP|ORDER|HAVING|CASE|WHEN|THEN|ELSE|END|DISTINCT|LIMIT|ROUND|COUNT|SUM|AVG|MAX|MIN|NULLIF|COALESCE|MEDIAN|BY|ALL|UNION|OVER|PARTITION|FIRST_VALUE|EXTRACT|TRUNC|EXP|LIKE)\b/g;
+
+  function hl(raw) {
+    return raw
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .split('\n')
+      .map(line => {
+        if (/^\s*--/.test(line)) return '<span class="cm">' + line + '</span>';
+        const ci = line.indexOf('--');
+        const body = ci >= 0 ? line.slice(0, ci) : line;
+        const tail = ci >= 0 ? '<span class="cm">' + line.slice(ci) + '</span>' : '';
+        const out = body
+          .replace(/(\{\{[^}]+\}\})/g, '<span class="fn">$1</span>')
+          .replace(/'([^']*)'/g, "<span class=\"str\">'$1'</span>")
+          .replace(KW, '<span class="kw">$1</span>')
+          .replace(/\b(\d+(?:\.\d+)?)\b/g, '<span class="nm">$1</span>');
+        return out + tail;
+      })
+      .join('\n');
+  }
+
+  // ── Lineage click handler ──────────────────────────────────────────────────
+  const nodes    = document.querySelectorAll('.dn[data-model]');
+  const sqlFname = document.getElementById('sql-fname');
+  const sqlPre   = document.getElementById('sql-pre');
+
+  nodes.forEach(node => {
+    node.addEventListener('click', () => {
+      nodes.forEach(n => n.classList.remove('active'));
+      node.classList.add('active');
+      const entry = SQL_MODELS[node.dataset.model];
+      if (!entry) return;
+      sqlFname.textContent = '// ' + entry.fname;
+      sqlPre.innerHTML = hl(entry.sql);
+    });
   });
 </script>
 </body>
