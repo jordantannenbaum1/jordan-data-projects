@@ -131,7 +131,25 @@
   .cert-item::before{content:'◆';font-size:.45rem;color:var(--dim);flex-shrink:0}
   .cert-item:last-child{border-bottom:none}
 
-  @media(max-width:768px){.hero,.projects,.about,.resume-section{padding-left:1.5rem;padding-right:1.5rem}nav{padding:0 1.5rem}.hero-stat-row{gap:2rem}.projects-grid{grid-template-columns:1fr}footer{flex-direction:column;gap:.5rem;text-align:center}.exp-entry{grid-template-columns:1fr;gap:1.25rem}.resume-bottom{grid-template-columns:1fr;gap:3rem}}
+  @media(max-width:768px){
+    nav{padding:0 1.25rem}
+    .nav-right{gap:1.25rem}
+    .nav-right a{font-size:10px;letter-spacing:.04em}
+    .nav-right a:last-child{display:none}
+    .hero{padding:80px 1.5rem 3.5rem;min-height:auto}
+    .hero-bio{font-size:1rem}
+    .hero-stat-row{flex-wrap:wrap;gap:1.75rem}
+    .projects{padding:3rem 1.5rem 4rem}
+    .projects-grid{grid-template-columns:1fr}
+    .about{padding:3rem 1.5rem}
+    .resume-section{padding:3rem 1.5rem}
+    .resume-hd{flex-direction:column;gap:.5rem;margin-bottom:2rem}
+    .exp-list{margin-bottom:2.5rem}
+    .exp-entry{grid-template-columns:1fr;gap:1rem;padding:1.75rem 0}
+    .exp-desc{max-width:none}
+    .resume-bottom{grid-template-columns:1fr;gap:2.5rem}
+    footer{padding:1.5rem;flex-direction:column;gap:.5rem;text-align:center}
+  }
 </style>
 </head>
 <body>
@@ -348,21 +366,26 @@
     </a>
 
     <a class="project-card" href="projects/chosen/index.html">
-      <div class="card-num">07</div>
       <div class="card-accent" style="background:linear-gradient(90deg,#c0392b,#8b1a10)"></div>
-      <div class="card-title">Chosen? Free Will, Prediction, and the Architecture of Recidivism</div>
-      <p class="card-desc">A scrollytelling investigation into what actually predicts reoffending — and what it means for moral responsibility. Logistic regression + random forest + gradient boosting trained on pre-choice variables achieve 0.70 AUC. The data makes the philosophy uncomfortable.</p>
-      <div class="card-tags">
-        <span class="card-tag" style="background:rgba(192,57,43,.12);color:#c0392b">Free Will</span>
-        <span class="card-tag" style="background:rgba(255,255,255,.05);color:#8892a4">Python · sklearn</span>
-        <span class="card-tag" style="background:rgba(201,146,42,.12);color:#c9922a">Scrollytelling</span>
-      </div>
-      <div class="card-footer">
-        <div class="card-stats">
-          <div class="card-stat">AUC-ROC <span>0.694</span></div>
-          <div class="card-stat">N <span>25,835</span></div>
+      <div class="card-body">
+        <div class="card-meta">
+          <span class="card-num">07</span>
+          <span class="card-status status-live">Live</span>
         </div>
-        <span class="card-arrow">→</span>
+        <div class="card-title">Chosen? Free Will, Prediction, and the Architecture of Recidivism</div>
+        <p class="card-desc">A scrollytelling investigation into what actually predicts reoffending — and what it means for moral responsibility. Logistic regression + random forest + gradient boosting trained on pre-choice variables achieve 0.70 AUC. The data makes the philosophy uncomfortable.</p>
+        <div class="card-tags">
+          <span class="card-tag" style="background:rgba(192,57,43,.12);color:#c0392b">Free Will</span>
+          <span class="card-tag" style="background:rgba(255,255,255,.05);color:#8892a4">Python · sklearn</span>
+          <span class="card-tag" style="background:rgba(201,146,42,.12);color:#c9922a">Scrollytelling</span>
+        </div>
+        <div class="card-footer">
+          <div class="card-stats">
+            <div class="card-stat">AUC-ROC <span>0.694</span></div>
+            <div class="card-stat">N <span>25,835</span></div>
+          </div>
+          <span class="card-arrow">→</span>
+        </div>
       </div>
     </a>
 
